@@ -563,34 +563,37 @@
             </div>
         </div>
 
-        <div id="account-container">
-            <h1 style="margin-bottom: 30px; font-weight: 900; letter-spacing: 2px; color: #fff; text-shadow: 0 0 15px var(--theme-glow);" data-lang="acc_title">МОЙ ПРОФИЛЬ</h1>
-            <div class="acc-header-box">
-                <div class="acc-avatar"><svg class="svg-icon" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
-                <div class="acc-info">
-                    <div class="name-wrapper">
-                        <input type="text" id="acc-nickname" value="Guest Pianist" spellcheck="false" maxlength="16">
-                        <div class="name-info-icon" data-lang-title="name_info">?</div>
-                    </div>
-                    
-                    <div style="display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap;">
-                         <select id="acc-font" class="action-btn" style="background: rgba(0,0,0,0.5);">
-                             <option value="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif">Standard Font</option>
-                             <option value="'Courier New', Courier, monospace">Monospace (Code)</option>
-                             <option value="'Georgia', serif">Classic (Serif)</option>
-                             <option value="'Comic Sans MS', cursive, sans-serif">Fun Font</option>
-                         </select>
-                         <div style="display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.5); padding: 0 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3);">
-                             <label style="font-size: 13px; font-weight: bold;" data-lang="acc_color">Цвет (Admin/Owner = 🚫):</label>
-                             <input type="color" id="acc-color" value="#ffffff" style="background: transparent; border: none; width: 30px; height: 35px; cursor: pointer; padding: 0;">
-                         </div>
-                    </div>
-                    <h3 data-lang="acc_bio_title" style="margin-bottom: 10px; color: var(--theme-color);">О себе:</h3>
-                    <textarea id="acc-bio" spellcheck="false" placeholder="Расскажите о своих музыкальных вкусах или проектах..." data-lang-placeholder="acc_bio_ph"></textarea>
-                </div>
+<div id="account-container">
+    <div class="acc-header-box">
+        <div class="acc-avatar" id="user-photo">
+            👤
+        </div>
+        <div class="acc-info">
+            <input type="text" id="acc-nickname" placeholder="Твой ник..." readonly style="margin-bottom: 15px; width: 100%; font-size: 36px; font-weight: bold; background: transparent; border: none; color: #fff; outline: none; border-bottom: 2px dashed rgba(255,255,255,0.3);">
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap;">
+                 <select id="acc-font" class="action-btn" style="background: rgba(0,0,0,0.5);">
+                     <option value="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif">Standard Font</option>
+                     <option value="'Courier New', Courier, monospace">Monospace (Code)</option>
+                     <option value="'Georgia', serif">Classic (Serif)</option>
+                     <option value="'Comic Sans MS', cursive, sans-serif">Fun Font</option>
+                 </select>
+                 <div style="display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.5); padding: 0 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3);">
+                     <label style="font-size: 13px; font-weight: bold;" data-lang="acc_color">Цвет (Admin/Owner = 🚫):</label>
+                     <input type="color" id="acc-color" value="#ffffff" style="background: transparent; border: none; width: 30px; height: 35px; cursor: pointer; padding: 0;">
+                 </div>
+            </div>
+            
+            <h3 data-lang="acc_bio_title" style="margin-bottom: 10px; color: var(--theme-color);">О себе:</h3>
+            <textarea id="acc-bio" spellcheck="false" placeholder="Расскажите о своих музыкальных вкусах или проектах..." data-lang-placeholder="acc_bio_ph"></textarea>
+            
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                <button id="btn-login" class="action-btn" style="border-color: #4285F4; color: #4285F4;">🔵 Войти через Google</button>
+                <button id="btn-logout" class="action-btn" style="border-color: #ff4444; color: #ff4444; display: none;">Выйти</button>
             </div>
         </div>
     </div>
+</div>
 
 <script>
 // --- СИСТЕМА ЛОКАЛИЗАЦИИ ---
@@ -1302,28 +1305,82 @@ window.addEventListener('DOMContentLoaded', () => {
 
     setLang('ru');
 });
+document.getElementById('btn-login').addEventListener('click', async () => {
+    try {
+        // Вызываем всплывающее окно Google
+        await window.fb.signInWithPopup(window.auth, window.fb.provider);
+    } catch (error) {
+        console.error("Ошибка входа:", error);
+        alert("Не удалось войти! Посмотри консоль.");
+    }
+});
+
+document.getElementById('btn-logout').addEventListener('click', async () => {
+    // Выходим из аккаунта
+    await window.auth.signOut();
+    location.reload(); // Перезагружаем страницу, чтобы очистить данные
+});
+    
 </script>
     <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  // Добавили инструменты для входа
+  import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   const firebaseConfig = {
-    // ВСТАВЬ СЮДА СВОЙ КОНФИГ ИЗ FIREBASE!
-    apiKey: "ТВОЙ_КЛЮЧ",
-    authDomain: "твой-проект.firebaseapp.com",
-    projectId: "твой-проект",
-    storageBucket: "твой-проект.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:abcde12345"
+    apiKey: "AIzaSyB237rm-9WojXTcn-vt04bTEFr3Rd1uKCA",
+    authDomain: "piano-a30fe.firebaseapp.com",
+    projectId: "piano-a30fe",
+    storageBucket: "piano-a30fe.firebasestorage.app",
+    messagingSenderId: "378255986884",
+    appId: "1:378255986884:web:41bcf741c579190f3bb991"
   };
 
   const app = initializeApp(firebaseConfig);
   window.db = getFirestore(app);
-  window.fb = { collection, addDoc, getDocs, deleteDoc, doc };
-</script> 
-// Принудительно обновляем библиотеку, когда Firebase 100% загрузился
+  window.auth = getAuth(app);
+  window.provider = new GoogleAuthProvider();
+  
+  // Отправляем функции наружу, чтобы кнопки могли их использовать
+  window.fb = { collection, addDoc, getDocs, deleteDoc, doc, signInWithPopup, signOut, provider };
+
+  // Эта штука постоянно следит, вошел ты или нет
+  onAuthStateChanged(window.auth, (user) => {
+    if (user) {
+      console.log("Вошел красавчик:", user.displayName);
+      console.log("Твой уникальный ID (UID):", user.uid); // ВОТ ЭТО ТЕБЕ НАДО БУДЕТ СКОПИРОВАТЬ
+      
+      // Вставляем имя в профиль
+      document.getElementById('acc-nickname').value = user.displayName;
+      // Вставляем фотку, если она есть
+      if(user.photoURL) {
+          document.querySelector('.acc-avatar').innerHTML = `<img src="${user.photoURL}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+      }
+      
+      // Кнопки: прячем "Войти", показываем "Выйти"
+      document.getElementById('btn-login').style.display = 'none';
+      document.getElementById('btn-logout').style.display = 'block';
+
+      // Проверка на Босса (твой UID мы вставим позже)
+      if (user.uid === "СЮДА_ВСТАВИШЬ_СВОЙ_UID_КОГДА_УЗНАЕШЬ") {
+          window.isOwner = true;
+          document.querySelector('.logo').innerText = "VIRTUAL PIANO (OWNER)";
+          document.querySelector('.logo').style.color = "#0066ff"; 
+      }
+    } else {
+      console.log("Никто не вошел");
+      window.isOwner = false;
+      document.getElementById('btn-login').style.display = 'block';
+      document.getElementById('btn-logout').style.display = 'none';
+      document.querySelector('.acc-avatar').innerHTML = '👤';
+      document.getElementById('acc-nickname').value = '';
+    }
+  });
+        // Принудительно обновляем библиотеку, когда Firebase 100% загрузился
   setTimeout(() => {
       if (window.renderLibrary) window.renderLibrary();
   }, 500);
+</script> 
 </body>
 </html>
