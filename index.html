@@ -679,16 +679,32 @@ window.addEventListener('DOMContentLoaded', () => {
     prProjNameInput.addEventListener('blur', e => { if(!e.target.value.trim()) e.target.value = translations[currentLang].default_proj_name; });
 
     // --- БИБЛИОТЕКА ЛОГИКА ---
-    function renderLibrary() {
-        const grid = document.getElementById('lib-grid-container'); grid.innerHTML = '';
-        let published = JSON.parse(localStorage.getItem('published_projects') || '[]');
+    async function renderLibrary() {
+        const grid = document.getElementById('lib-grid-container'); 
+        grid.innerHTML = '<div style="color:#00e5ff; text-align:center; width:100%; margin-top:50px; font-size:24px;">Загрузка библиотеки...</div>';
+        
         let currentNick = document.getElementById('acc-nickname').value || "Guest Pianist";
+        let published = [];
+
+        // Скачиваем базу из Firebase
+        if (window.fb) {
+            try {
+                const querySnapshot = await window.fb.getDocs(window.fb.collection(window.db, "songs"));
+                querySnapshot.forEach((doc) => {
+                    let data = doc.data();
+                    data.docId = doc.id; // Сохраняем реальный ID документа для удаления
+                    published.push(data);
+                });
+            } catch (err) {
+                console.error("Ошибка загрузки:", err);
+            }
+        }
         
         if (published.length === 0) { grid.innerHTML = `<div style="width: 100%; text-align: center; color: #aaa; font-size: 20px; font-weight: bold; margin-top: 50px; grid-column: 1 / -1;">${translations[currentLang].lib_empty}</div>`; return; }
 
+        grid.innerHTML = ''; // Очищаем надпись "Загрузка"
         published.reverse().forEach(p => {
             let card = document.createElement('div'); card.className = 'lib-card';
-            
             let colors = ['#ff0055', '#00e5ff', '#ffcc00', '#b200ff', '#00ffaa'];
             let hash = 0; for(let i=0; i<p.name.length; i++) hash = p.name.charCodeAt(i) + ((hash << 5) - hash);
             let c1 = colors[Math.abs(hash) % colors.length];
@@ -721,13 +737,16 @@ window.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
 
+            // Обновленное удаление из базы Firebase
             if (p.author === currentNick) {
-                card.querySelector('.lib-btn-delete').addEventListener('click', (e) => {
+                card.querySelector('.lib-btn-delete').addEventListener('click', async (e) => {
                     e.stopPropagation();
-                    let currentPubs = JSON.parse(localStorage.getItem('published_projects') || '[]');
-                    currentPubs = currentPubs.filter(x => x.pubId !== p.pubId);
-                    localStorage.setItem('published_projects', JSON.stringify(currentPubs));
-                    renderLibrary();
+                    if (window.fb && p.docId) {
+                        try {
+                            await window.fb.deleteDoc(window.fb.doc(window.db, "songs", p.docId));
+                            renderLibrary(); // Перезагружаем после удаления
+                        } catch(err) { console.error(err); }
+                    }
                 });
             }
 
@@ -743,7 +762,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
             card.querySelector('.lib-btn-remix').addEventListener('click', (e) => {
                 e.stopPropagation();
-                p.views = (p.views || 0) + 1; localStorage.setItem('published_projects', JSON.stringify(published));
+                // Для ремиксов пока оставим локальное сохранение счетчика просмотров
                 currentProjectId = null; prNotes = JSON.parse(JSON.stringify(p.notes)); selectedNotes = []; document.getElementById('pr-bpm').value = p.bpm || 120;
                 prProjNameInput.value = p.name + " (Remix)"; document.querySelectorAll('.pr-note').forEach(el => el.remove()); updateAllPRNotes(); hasUnsavedChanges = true; switchView('create');
             });
@@ -785,14 +804,32 @@ window.addEventListener('DOMContentLoaded', () => {
 
             let pubBtn = document.createElement('div'); pubBtn.className = 'card-action-btn'; pubBtn.title = "Publish to Library";
             pubBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>`;
-            pubBtn.addEventListener('click', (e) => {
-                e.stopPropagation(); let published = JSON.parse(localStorage.getItem('published_projects') || '[]');
-                let pubProject = JSON.parse(JSON.stringify(p)); pubProject.pubId = Date.now(); pubProject.author = document.getElementById('acc-nickname').value || "Guest Pianist"; pubProject.likes = 0; pubProject.views = 0;
-                published.push(pubProject); localStorage.setItem('published_projects', JSON.stringify(published));
-                
-                // Save pubId locally
-                let projs = JSON.parse(localStorage.getItem('studio_projects') || '[]'); let target = projs.find(x => x.id === p.id); if(target) { target.pubId = pubProject.pubId; localStorage.setItem('studio_projects', JSON.stringify(projs)); }
-                alert(translations[currentLang].lib_pub_ok);
+            pubBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                if (!window.fb) return alert("Firebase загружается, подождите секунду...");
+
+                let pubProject = JSON.parse(JSON.stringify(p)); 
+                pubProject.pubId = Date.now(); 
+                pubProject.author = document.getElementById('acc-nickname').value || "Guest Pianist"; 
+                pubProject.likes = 0; 
+                pubProject.views = 0;
+
+                try {
+                    // Отправляем в облако Firebase!
+                    await window.fb.addDoc(window.fb.collection(window.db, "songs"), pubProject);
+                    
+                    // Сохраняем pubId у себя, чтобы знать, что это наш проект
+                    let projs = JSON.parse(localStorage.getItem('studio_projects') || '[]'); 
+                    let target = projs.find(x => x.id === p.id); 
+                    if(target) { 
+                        target.pubId = pubProject.pubId; 
+                        localStorage.setItem('studio_projects', JSON.stringify(projs)); 
+                    }
+                    alert(translations[currentLang].lib_pub_ok);
+                } catch (err) {
+                    console.error(err);
+                    alert("Ошибка публикации! Проверь настройки Firestore.");
+                }
             });
 
             actions.appendChild(shareBtn); actions.appendChild(pubBtn); card.appendChild(nameInput); card.appendChild(info); card.appendChild(actions);
@@ -1157,6 +1194,24 @@ window.addEventListener('DOMContentLoaded', () => {
 
     setLang('ru');
 });
+</script>
+    <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    // ВСТАВЬ СЮДА СВОЙ КОНФИГ ИЗ FIREBASE!
+    apiKey: "ТВОЙ_КЛЮЧ",
+    authDomain: "твой-проект.firebaseapp.com",
+    projectId: "твой-проект",
+    storageBucket: "твой-проект.appspot.com",
+    messagingSenderId: "123456789",
+    appId: "1:123456789:web:abcde12345"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  window.db = getFirestore(app);
+  window.fb = { collection, addDoc, getDocs, deleteDoc, doc };
 </script>
 </body>
 </html>
