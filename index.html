@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Free Online Piano & Studio</title>
+    <link rel="icon" href="data:image/x-icon;base64,">
     <style>
         /* ==========================================================================
            1. CORE STYLES & CSS VARIABLES
@@ -183,9 +184,13 @@
         .lib-card:hover .lib-btn-remix { opacity: 1; transform: translateX(0);}
         .lib-btn-remix:hover { background: #b200ff; box-shadow: 0 0 15px #b200ff;}
 
-        .lib-btn-delete { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); border: 1px solid #ff0055; color: #ff0055; width: 35px; height: 35px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; z-index: 10; opacity: 0;}
+        .lib-btn-delete { position: absolute; top: 10px; right: 45px; background: rgba(0,0,0,0.6); border: 1px solid #ff0055; color: #ff0055; width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; z-index: 10; opacity: 0;}
         .lib-card:hover .lib-btn-delete { opacity: 1; }
         .lib-btn-delete:hover { background: #ff0055; color: #fff; box-shadow: 0 0 15px #ff0055;}
+
+        .lib-btn-fav { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); border: 1px solid #ffcc00; color: #ffcc00; width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; z-index: 10; opacity: 0; font-size: 16px;}
+        .lib-card:hover .lib-btn-fav { opacity: 1; }
+        .lib-btn-fav:hover { background: #ffcc00; color: #000; box-shadow: 0 0 15px #ffcc00;}
 
         /* --- PIANO ROLL --- */
         #create-container { display: none; width: 100%; height: 100%; background: #282f3a; flex-direction: column; opacity: 0; }
@@ -287,9 +292,9 @@
                 <p data-lang="help_c">❇️ CTRL = Педаль (Вкл/Выкл)</p>
             </div>
             <div style="flex:1; min-width:200px;">
-                <p>✏️ ЛКМ = Рисовать | СКМ = Удлинить | ПКМ = Удалить</p>
-                <p>⌫ BACKSPACE = Удалить выделенное (Ctrl+A)</p>
-                <p>⬆️ Ctrl+Стрелки = Сдвиг нот</p>
+                <p data-lang="help_space">✏️ ЛКМ = Рисовать | СКМ = Удлинить | ПКМ = Удалить</p>
+                <p data-lang="help_back">⌫ BACKSPACE = Удалить выделенное</p>
+                <p data-lang="help_up">⬆️ Ctrl+Стрелки = Сдвиг нот</p>
             </div>
         </div>
         <button class="close-modal action-btn" data-lang="btn_close">ОК</button>
@@ -313,6 +318,20 @@
             <button id="lang-ru" class="lang-btn active" onclick="setLang('ru')">RUS</button>
         </div>
         <button class="close-modal action-btn" data-lang="btn_close">ОК</button>
+    </div>
+
+    <div id="publish-modal" class="modal" style="border-color: #00ffaa;">
+        <h2 data-lang="pub_title" style="color: #00ffaa;">ПУБЛИКАЦИЯ</h2>
+        <p data-lang="pub_desc" style="border-left-color: #00ffaa; font-size: 15px; margin-bottom: 20px;">Выберите жанр для вашего проекта, чтобы его было проще найти!</p>
+        <select id="publish-genre" class="action-btn" style="width: 100%; margin-bottom: 25px; padding: 10px; font-size: 16px;">
+            <option value="trend" data-lang="lib_cat_all">Global Trends</option>
+            <option value="undertale" data-lang="lib_cat_ut">Undertale</option>
+            <option value="classical" data-lang="lib_cat_class">Classical</option>
+        </select>
+        <div style="display:flex; gap: 15px; justify-content: center;">
+            <button id="btn-confirm-publish" class="action-btn" style="border-color:#00ffaa; color:#00ffaa; flex: 1;" data-lang="pub_btn">Опубликовать</button>
+            <button class="close-modal action-btn" style="flex: 1;" data-lang="btn_cancel">Отмена</button>
+        </div>
     </div>
 
     <div id="sync-modal" class="modal" style="border-color: #00e5ff;">
@@ -393,7 +412,7 @@
             
             <div id="metronome-panel" class="floating-panel">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h4 style="color: #ffcc00; font-weight: 900; margin:0; text-shadow: 0 0 10px #ffcc00; cursor: grab;">METRONOME</h4>
+                    <h4 data-lang="metro_title" style="color: #ffcc00; font-weight: 900; margin:0; text-shadow: 0 0 10px #ffcc00; cursor: grab;">METRONOME</h4>
                     <button id="btn-close-metro" style="background:transparent; border:none; color:#fff; cursor:pointer; font-size:16px;">✖</button>
                 </div>
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
@@ -405,7 +424,7 @@
 
             <div id="record-panel" class="floating-panel">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <h4 style="color: #b200ff; font-weight: 900; margin:0; text-shadow: 0 0 10px #b200ff; cursor: grab;">STUDIO RECORDER</h4>
+                    <h4 data-lang="rec_title" style="color: #b200ff; font-weight: 900; margin:0; text-shadow: 0 0 10px #b200ff; cursor: grab;">STUDIO RECORDER</h4>
                     <button id="btn-close-rec" style="background:transparent; border:none; color:#fff; cursor:pointer; font-size:16px;">✖</button>
                 </div>
                 <textarea id="rec-text" inputmode="none" data-lang-placeholder="rec_placeholder" placeholder="Нажимайте на клавиши пианино для записи..."></textarea>
@@ -414,8 +433,8 @@
                     <input type="number" class="bpm-input" value="120" min="40" max="400" style="width: 60px; text-align: center; background: rgba(0,0,0,0.5); color: #b200ff; border: 1px solid #b200ff; border-radius: 4px;">
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <button id="btn-play-rec" class="action-btn" style="flex:1; border-color:#00ffaa; color:#00ffaa;">▶ PLAY MY SONG</button>
-                    <button id="btn-clear-rec" class="action-btn" style="flex:1;">CLEAR</button>
+                    <button id="btn-play-rec" class="action-btn" style="flex:1; border-color:#00ffaa; color:#00ffaa;" data-lang="btn_play_rec">▶ PLAY MY SONG</button>
+                    <button id="btn-clear-rec" class="action-btn" style="flex:1;" data-lang="btn_clear_rec">CLEAR</button>
                 </div>
             </div>
             <canvas id="visualizer"></canvas>
@@ -432,10 +451,10 @@
             </div>
 
             <div class="lib-chips">
-                <button class="lib-chip active" data-lang="lib_cat_all">Global Trends</button>
-                <button class="lib-chip" data-lang="lib_cat_ut">Undertale</button>
-                <button class="lib-chip" data-lang="lib_cat_class">Classical</button>
-                <button class="lib-chip" data-lang="lib_cat_fav">My Favorites</button>
+                <button class="lib-chip active" data-genre="all" data-lang="lib_cat_all">Global Trends</button>
+                <button class="lib-chip" data-genre="undertale" data-lang="lib_cat_ut">Undertale</button>
+                <button class="lib-chip" data-genre="classical" data-lang="lib_cat_class">Classical</button>
+                <button class="lib-chip" data-genre="favorites" data-lang="lib_cat_fav">My Favorites</button>
             </div>
 
             <div class="lib-grid" id="lib-grid-container">
@@ -576,9 +595,9 @@
 <script>
 // --- СИСТЕМА ЛОКАЛИЗАЦИИ ---
 const translations = {
-    en: { inst: "Instrument:", vol: "Volume:", inst_piano: "🎹 Piano", inst_mega: "💀 Megalo", inst_pure: "🎵 Sine", inst_box: "🎵 Music Box", sustain_on: "❇ SUSTAIN PEDAL ON ❇", help_title: "INSTRUCTIONS", set_title: "THEME COLOR", lang_title: "LANGUAGE", btn_close: "GOT IT", help_q: "🎹 QWERTY... = Upper Octave", help_z: "🎹 ZXCV... = Lower Octave", help_s: "⬆️ SHIFT = Octave Up (+12)", help_c: "❇️ CTRL = Sustain (Toggle)", help_space: "✏️ LMB = Draw | MMB = Resize | RMB = Delete", help_back: "⌫ BACKSPACE = Delete Selected", help_up: "⬆️ Ctrl+Arrows = Shift Notes", trn_title: "TRANSPOSE", metro_tempo: "Tempo (BPM):", rec_tempo: "Tempo (BPM):", pr_bpm: "Tempo:", rec_placeholder: "Press piano keys to record...", side_home: "Home", side_lib: "Library", side_create: "Create", side_tutor: "Tutorial", side_help: "Help", side_set: "Settings", side_acc: "Account", acc_title: "MY PROFILE", acc_color: "Color (Admin/Owner = 🚫):", acc_bio_title: "About me:", acc_bio_ph: "Tell us about your musical tastes or projects...", proj_title: "PROJECTS", proj_my: "My Projects", proj_new: "Create New", proj_open_lib: "Open from Library", proj_unsaved: "Unsaved", proj_empty: "You have no projects yet", tool_draw: "Pen", tool_select: "Select", alert_owner: "Blue is an exclusive Owner color! Access denied.", alert_admin: "Red is an exclusive Admin color! Access denied.", name_info: "Forbidden: profanity, insults, politics.", name_min: "Name must be at least 3 characters long!", btn_save: "💾 Save", btn_back: "Back", btn_delete_work: "Delete", btn_cancel: "Cancel", saved_ok: "Project saved successfully!", unsaved_warn_title: "WARNING!", unsaved_warn_text: "You have unsaved work! If you do not save the project now, it will be permanently deleted.", no_unsaved: "No unsaved changes.", default_proj_name: "New Project", del_mode: "🗑 Delete Mode", del_confirm: "Are you sure you want to delete these projects?", btn_yes: "Yes, I'm sure", btn_no: "No, I'm not sure", notes_cnt: "Notes:", pr_grid_snap: "Snap Grid:", snap_4: "1/4 (Standard)", snap_8: "1/8 (Fine)", lib_cat_all: "Global Trends", lib_cat_ut: "Undertale", lib_cat_class: "Classical", lib_cat_fav: "My Favorites", lib_import_ph: "Paste project code...", lib_import_btn: "Import", lib_empty: "The library is empty. Publish your first masterpiece!", lib_btn_remix: "Remix", lib_pub_ok: "Published to Library!", sel_all: "✓ All", sel_inst: "✓ Inst", sync_title: "UPDATE PROJECT", sync_msg: "This project is published in the Library. Save changes there too?", btn_sync_both: "Library & Local", btn_sync_local: "Local Only" },
-    tr: { inst: "Enstrüman:", vol: "Ses:", inst_piano: "🎹 Piyano", inst_mega: "💀 Megalo", inst_pure: "🎵 Saf Sinüs", inst_box: "🎵 Müzik Kutusu", sustain_on: "❇ PEDAL AÇIK ❇", help_title: "TALİMATLAR", set_title: "TEMA RENGİ", lang_title: "DİL", btn_close: "ANLADIM", help_q: "🎹 QWERTY... = Üst Oktav", help_z: "🎹 ZXCV... = Alt Oktav", help_s: "⬆️ SHIFT = Bir Oktav Yukarı", help_c: "❇️ CTRL = Sustain Pedalı", help_space: "✏️ Sol Tık = Çiz | Orta Tık = Uzat | Sağ Tık = Sil", help_back: "⌫ BACKSPACE = Seçileni Sil", help_up: "⬆️ Ctrl+Oklar = Notayı Kaydır", trn_title: "TRANSPOZE", metro_tempo: "Tempo (BPM):", rec_tempo: "Tempo (BPM):", pr_bpm: "Tempo:", rec_placeholder: "Kaydetmek için piyano tuşlarına basın...", side_home: "Ana Sayfa", side_lib: "Kütüphane", side_create: "Oluştur", side_tutor: "Eğitim", side_help: "Yardım", side_set: "Ayarlar", side_acc: "Hesap", acc_title: "PROFİLİM", acc_color: "Renk (Admin/Owner = 🚫):", acc_bio_title: "Hakkımda:", acc_bio_ph: "Müzik zevkleriniz veya projeleriniz hakkında bilgi verin...", proj_title: "PROJELER", proj_my: "Projelerim", proj_new: "Yeni Oluştur", proj_open_lib: "Kütüphaneden Aç", proj_unsaved: "Kaydedilmemiş", proj_empty: "Henüz projeniz yok", tool_draw: "Kalem", tool_select: "Seçim", alert_owner: "Mavi özel bir Owner rengidir! Erişim reddedildi.", alert_admin: "Kırmızı özel Admin rengidir! Erişim reddedildi.", name_info: "Yasak: küfür, hakaret, siyaset.", name_min: "İsim en az 3 karakter uzunluğunda olmalıdır!", btn_save: "💾 Kaydet", btn_back: "Geri", btn_delete_work: "Sil", btn_cancel: "İptal", saved_ok: "Proje başarıyla kaydedildi!", unsaved_warn_title: "UYARI!", unsaved_warn_text: "Kaydedilmemiş çalışmanız var! Projeyi şimdi kaydetmezseniz kalıcı olarak silinecektir.", no_unsaved: "Kaydedilmemiş değişiklik yok.", default_proj_name: "Yeni Proje", del_mode: "🗑 Silme Modu", del_confirm: "Bu projeleri silmek istediğinizden emin misiniz?", btn_yes: "Evet, eminim", btn_no: "Hayır, emin değilim", notes_cnt: "Notlar:", pr_grid_snap: "Izgara (Snap):", snap_4: "1/4 (Standart)", snap_8: "1/8 (İnce)", lib_cat_all: "Küresel Trendler", lib_cat_ut: "Undertale", lib_cat_class: "Klasik", lib_cat_fav: "Favorilerim", lib_import_ph: "Proje kodunu yapıştırın...", lib_import_btn: "İçe Aktar", lib_empty: "Kütüphane boş. İlk şaheserinizi yayınlayın!", lib_btn_remix: "Remix Yap", lib_pub_ok: "Kütüphaneye eklendi!", sel_all: "✓ Tümünü Seç", sel_inst: "✓ Enstrüman", sync_title: "PROJEYİ GÜNCELLE", sync_msg: "Bu proje Kütüphanede yayınlandı. Değişiklikler oraya da kaydedilsin mi?", btn_sync_both: "Herkes ve Benim İçin", btn_sync_local: "Sadece Benim İçin" },
-    ru: { inst: "Инструмент:", vol: "Громкость:", inst_piano: "🎹 Пианино", inst_mega: "💀 Мегало", inst_pure: "🎵 Синус", inst_box: "🎵 Шкатулка", sustain_on: "❇ ПЕДАЛЬ ВКЛЮЧЕНА ❇", help_title: "ИНСТРУКЦИЯ", set_title: "ЦВЕТ ИНТЕРФЕЙСА", lang_title: "ЯЗЫК", btn_close: "ПОНЯТНО", help_q: "🎹 QWERTY... = Верхняя октава", help_z: "🎹 ZXCV... = Нижняя октава", help_s: "⬆️ SHIFT = Октава вверх (+12)", help_c: "❇️ CTRL = Педаль (Вкл/Выкл)", help_space: "✏️ ЛКМ = Рисовать | СКМ = Удлинить | ПКМ = Удалить", help_back: "⌫ BACKSPACE = Удалить выделенное", help_up: "⬆️ Ctrl+Стрелки = Сдвиг нот", trn_title: "ТРАНСПОЗИЦИЯ", metro_tempo: "Темп (BPM):", rec_tempo: "Темп (BPM):", pr_bpm: "Темп:", rec_placeholder: "Нажимайте на клавиши пианино для записи...", side_home: "Главная", side_lib: "Библиотека", side_create: "Создать", side_tutor: "Обучение", side_help: "Справка", side_set: "Настройки", side_acc: "Аккаунт", acc_title: "МОЙ ПРОФИЛЬ", acc_color: "Цвет (Admin = 🚫):", acc_bio_title: "О себе:", acc_bio_ph: "Расскажите о своих музыкальных вкусах или проектах...", proj_title: "ПРОЕКТЫ", proj_my: "Мои проекты", proj_new: "Создать", proj_open_lib: "Открыть из библиотеки", proj_unsaved: "Несохраненные", proj_empty: "У вас ещё нет проектов", tool_draw: "Карандаш", tool_select: "Выделение", alert_owner: "Синий — эксклюзивный цвет Owner! Доступ запрещен.", alert_admin: "Красный — эксклюзивный цвет Admin! Доступ запрещен.", name_info: "Запрещены: маты, оскорбления, политика.", name_min: "Имя должно содержать минимум 3 символа!", btn_save: "💾 Сохранить", btn_back: "Назад", btn_delete_work: "Удалить", btn_cancel: "Отмена", saved_ok: "Проект успешно сохранен!", unsaved_warn_title: "ВНИМАНИЕ!", unsaved_warn_text: "У вас есть несохраненная работа! Если вы не сохраните проект сейчас, он будет удален навсегда.", no_unsaved: "Нет несохраненных изменений.", default_proj_name: "Новый проект", del_mode: "🗑 Режим удаления", del_confirm: "Вы уверены что хотите удалить эти проекты?", btn_yes: "Да, уверен", btn_no: "Нет, не уверен", notes_cnt: "Нот:", pr_grid_snap: "Сетка (Snap):", snap_4: "1/4 (Стандарт)", snap_8: "1/8 (Мелкая)", lib_cat_all: "Глобальные тренды", lib_cat_ut: "Undertale", lib_cat_class: "Классика", lib_cat_fav: "Избранное", lib_import_ph: "Вставьте код проекта...", lib_import_btn: "Импорт", lib_empty: "Библиотека пока пуста. Опубликуйте свой первый шедевр!", lib_btn_remix: "Сделать Ремикс", lib_pub_ok: "Успешно отправлено в библиотеку!", sel_all: "✓ Выделить всё", sel_inst: "✓ Инструмент", sync_title: "ОБНОВИТЬ ПРОЕКТ", sync_msg: "Проект опубликован в Библиотеке. Обновить его для всех или сохранить только у себя?", btn_sync_both: "Для всех и себя", btn_sync_local: "Только для себя" }
+    en: { inst: "Instrument:", vol: "Volume:", inst_piano: "🎹 Piano", inst_mega: "💀 Megalo", inst_pure: "🎵 Sine", inst_box: "🎵 Music Box", sustain_on: "❇ SUSTAIN PEDAL ON ❇", help_title: "INSTRUCTIONS", set_title: "THEME COLOR", lang_title: "LANGUAGE", btn_close: "GOT IT", help_q: "🎹 QWERTY... = Upper Octave", help_z: "🎹 ZXCV... = Lower Octave", help_s: "⬆️ SHIFT = Octave Up (+12)", help_c: "❇️ CTRL = Sustain (Toggle)", help_space: "✏️ LMB = Draw | MMB = Resize | RMB = Delete", help_back: "⌫ BACKSPACE = Delete Selected", help_up: "⬆️ Ctrl+Arrows = Shift Notes", trn_title: "TRANSPOSE", metro_title: "METRONOME", metro_tempo: "Tempo (BPM):", rec_title: "STUDIO RECORDER", rec_tempo: "Tempo (BPM):", pr_bpm: "Tempo:", rec_placeholder: "Press piano keys to record...", btn_play_rec: "▶ PLAY MY SONG", btn_clear_rec: "CLEAR", side_home: "Home", side_lib: "Library", side_create: "Create", side_tutor: "Tutorial", side_help: "Help", side_set: "Settings", side_acc: "Account", acc_title: "MY PROFILE", acc_color: "Color (Admin/Owner = 🚫):", acc_bio_title: "About me:", acc_bio_ph: "Tell us about your musical tastes or projects...", proj_title: "PROJECTS", proj_my: "My Projects", proj_new: "Create New", proj_open_lib: "Open from Library", proj_unsaved: "Unsaved", proj_empty: "You have no projects yet", tool_draw: "Pen", tool_select: "Select", alert_owner: "Blue is an exclusive Owner color! Access denied.", alert_admin: "Red is an exclusive Admin color! Access denied.", name_info: "Forbidden: profanity, insults, politics.", name_min: "Name must be at least 3 characters long!", btn_save: "💾 Save", btn_back: "Back", btn_delete_work: "Delete", btn_cancel: "Cancel", saved_ok: "Project saved successfully!", unsaved_warn_title: "WARNING!", unsaved_warn_text: "You have unsaved work! If you do not save the project now, it will be permanently deleted.", no_unsaved: "No unsaved changes.", default_proj_name: "New Project", del_mode: "🗑 Delete Mode", del_confirm: "Are you sure you want to delete these projects?", del_confirm_lib: "Are you sure you want to delete this from Library?", btn_yes: "Yes, I'm sure", btn_no: "No, I'm not sure", notes_cnt: "Notes:", pr_grid_snap: "Snap Grid:", snap_4: "1/4 (Standard)", snap_8: "1/8 (Fine)", lib_cat_all: "Global Trends", lib_cat_ut: "Undertale", lib_cat_class: "Classical", lib_cat_fav: "My Favorites", lib_import_ph: "Paste project code...", lib_import_btn: "Import", lib_empty: "The library is empty. Publish your first masterpiece!", lib_btn_remix: "Remix", lib_pub_ok: "Published to Library!", sel_all: "✓ All", sel_inst: "✓ Inst", sync_title: "UPDATE PROJECT", sync_msg: "This project is published in the Library. Save changes there too?", btn_sync_both: "Library & Local", btn_sync_local: "Local Only", pub_title: "PUBLISH", pub_desc: "Choose a genre for your project so it's easier to find!", pub_btn: "Publish" },
+    tr: { inst: "Enstrüman:", vol: "Ses:", inst_piano: "🎹 Piyano", inst_mega: "💀 Megalo", inst_pure: "🎵 Saf Sinüs", inst_box: "🎵 Müzik Kutusu", sustain_on: "❇ PEDAL AÇIK ❇", help_title: "TALİMATLAR", set_title: "TEMA RENGİ", lang_title: "DİL", btn_close: "ANLADIM", help_q: "🎹 QWERTY... = Üst Oktav", help_z: "🎹 ZXCV... = Alt Oktav", help_s: "⬆️ SHIFT = Bir Oktav Yukarı", help_c: "❇️ CTRL = Sustain Pedalı", help_space: "✏️ Sol Tık = Çiz | Orta Tık = Uzat | Sağ Tık = Sil", help_back: "⌫ BACKSPACE = Seçileni Sil", help_up: "⬆️ Ctrl+Oklar = Notayı Kaydır", trn_title: "TRANSPOZE", metro_title: "METRONOM", metro_tempo: "Tempo (BPM):", rec_title: "STÜDYO KAYDEDİCİ", rec_tempo: "Tempo (BPM):", pr_bpm: "Tempo:", rec_placeholder: "Kaydetmek için piyano tuşlarına basın...", btn_play_rec: "▶ ŞARKIMI ÇAL", btn_clear_rec: "TEMİZLE", side_home: "Ana Sayfa", side_lib: "Kütüphane", side_create: "Oluştur", side_tutor: "Eğitim", side_help: "Yardım", side_set: "Ayarlar", side_acc: "Hesap", acc_title: "PROFİLİM", acc_color: "Renk (Admin/Owner = 🚫):", acc_bio_title: "Hakkımda:", acc_bio_ph: "Müzik zevkleriniz veya projeleriniz hakkında bilgi verin...", proj_title: "PROJELER", proj_my: "Projelerim", proj_new: "Yeni Oluştur", proj_open_lib: "Kütüphaneden Aç", proj_unsaved: "Kaydedilmemiş", proj_empty: "Henüz projeniz yok", tool_draw: "Kalem", tool_select: "Seçim", alert_owner: "Mavi özel bir Owner rengidir! Erişim reddedildi.", alert_admin: "Kırmızı özel Admin rengidir! Erişim reddedildi.", name_info: "Yasak: küfür, hakaret, siyaset.", name_min: "İsim en az 3 karakter uzunluğunda olmalıdır!", btn_save: "💾 Kaydet", btn_back: "Geri", btn_delete_work: "Sil", btn_cancel: "İptal", saved_ok: "Proje başarıyla kaydedildi!", unsaved_warn_title: "UYARI!", unsaved_warn_text: "Kaydedilmemiş çalışmanız var! Projeyi şimdi kaydetmezseniz kalıcı olarak silinecektir.", no_unsaved: "Kaydedilmemiş değişiklik yok.", default_proj_name: "Yeni Proje", del_mode: "🗑 Silme Modu", del_confirm: "Bu projeleri silmek istediğinizden emin misiniz?", del_confirm_lib: "Kütüphaneden silmek istediğinize emin misiniz?", btn_yes: "Evet, eminim", btn_no: "Hayır, emin değilim", notes_cnt: "Notlar:", pr_grid_snap: "Izgara (Snap):", snap_4: "1/4 (Standart)", snap_8: "1/8 (İnce)", lib_cat_all: "Küresel Trendler", lib_cat_ut: "Undertale", lib_cat_class: "Klasik", lib_cat_fav: "Favorilerim", lib_import_ph: "Proje kodunu yapıştırın...", lib_import_btn: "İçe Aktar", lib_empty: "Kütüphane boş. İlk şaheserinizi yayınlayın!", lib_btn_remix: "Remix Yap", lib_pub_ok: "Kütüphaneye eklendi!", sel_all: "✓ Tümünü Seç", sel_inst: "✓ Enstrüman", sync_title: "PROJEYİ GÜNCELLE", sync_msg: "Bu proje Kütüphanede yayınlandı. Değişiklikler oraya da kaydedilsin mi?", btn_sync_both: "Herkes ve Benim İçin", btn_sync_local: "Sadece Benim İçin", pub_title: "YAYINLA", pub_desc: "Bulunmasını kolaylaştırmak için projeniz için bir tür seçin!", pub_btn: "Yayınla" },
+    ru: { inst: "Инструмент:", vol: "Громкость:", inst_piano: "🎹 Пианино", inst_mega: "💀 Мегало", inst_pure: "🎵 Синус", inst_box: "🎵 Шкатулка", sustain_on: "❇ ПЕДАЛЬ ВКЛЮЧЕНА ❇", help_title: "ИНСТРУКЦИЯ", set_title: "ЦВЕТ ИНТЕРФЕЙСА", lang_title: "ЯЗЫК", btn_close: "ПОНЯТНО", help_q: "🎹 QWERTY... = Верхняя октава", help_z: "🎹 ZXCV... = Нижняя октава", help_s: "⬆️ SHIFT = Октава вверх (+12)", help_c: "❇️ CTRL = Педаль (Вкл/Выкл)", help_space: "✏️ ЛКМ = Рисовать | СКМ = Удлинить | ПКМ = Удалить", help_back: "⌫ BACKSPACE = Удалить выделенное", help_up: "⬆️ Ctrl+Стрелки = Сдвиг нот", trn_title: "ТРАНСПОЗИЦИЯ", metro_title: "МЕТРОНОМ", metro_tempo: "Темп (BPM):", rec_title: "СТУДИЯ ЗАПИСИ", rec_tempo: "Темп (BPM):", pr_bpm: "Темп:", rec_placeholder: "Нажимайте на клавиши пианино для записи...", btn_play_rec: "▶ МОЯ ПЕСНЯ", btn_clear_rec: "ОЧИСТИТЬ", side_home: "Главная", side_lib: "Библиотека", side_create: "Создать", side_tutor: "Обучение", side_help: "Справка", side_set: "Настройки", side_acc: "Аккаунт", acc_title: "МОЙ ПРОФИЛЬ", acc_color: "Цвет (Admin = 🚫):", acc_bio_title: "О себе:", acc_bio_ph: "Расскажите о своих музыкальных вкусах или проектах...", proj_title: "ПРОЕКТЫ", proj_my: "Мои проекты", proj_new: "Создать", proj_open_lib: "Открыть из библиотеки", proj_unsaved: "Несохраненные", proj_empty: "У вас ещё нет проектов", tool_draw: "Карандаш", tool_select: "Выделение", alert_owner: "Синий — эксклюзивный цвет Owner! Доступ запрещен.", alert_admin: "Красный — эксклюзивный цвет Admin! Доступ запрещен.", name_info: "Запрещены: маты, оскорбления, политика.", name_min: "Имя должно содержать минимум 3 символа!", btn_save: "💾 Сохранить", btn_back: "Назад", btn_delete_work: "Удалить", btn_cancel: "Отмена", saved_ok: "Проект успешно сохранен!", unsaved_warn_title: "ВНИМАНИЕ!", unsaved_warn_text: "У вас есть несохраненная работа! Если вы не сохраните проект сейчас, он будет удален навсегда.", no_unsaved: "Нет несохраненных изменений.", default_proj_name: "Новый проект", del_mode: "🗑 Режим удаления", del_confirm: "Вы уверены что хотите удалить эти проекты?", del_confirm_lib: "Точно удалить этот проект из библиотеки для всех?", btn_yes: "Да, уверен", btn_no: "Нет, не уверен", notes_cnt: "Нот:", pr_grid_snap: "Сетка (Snap):", snap_4: "1/4 (Стандарт)", snap_8: "1/8 (Мелкая)", lib_cat_all: "Глобальные тренды", lib_cat_ut: "Undertale", lib_cat_class: "Классика", lib_cat_fav: "Избранное", lib_import_ph: "Вставьте код проекта...", lib_import_btn: "Импорт", lib_empty: "Библиотека пока пуста. Опубликуйте свой первый шедевр!", lib_btn_remix: "Сделать Ремикс", lib_pub_ok: "Успешно отправлено в библиотеку!", sel_all: "✓ Выделить всё", sel_inst: "✓ Инструмент", sync_title: "ОБНОВИТЬ ПРОЕКТ", sync_msg: "Проект опубликован в Библиотеке. Обновить его для всех или сохранить только у себя?", btn_sync_both: "Для всех и себя", btn_sync_local: "Только для себя", pub_title: "ПУБЛИКАЦИЯ", pub_desc: "Выберите жанр для вашего проекта, чтобы его было проще найти!", pub_btn: "Опубликовать" }
 };
 
 window.currentLang = 'ru';
@@ -595,7 +614,10 @@ window.setLang = function(lang) {
     document.querySelectorAll('[data-lang]').forEach(el => { const key = el.getAttribute('data-lang'); if (translations[lang] && translations[lang][key]) el.innerText = translations[lang][key]; }); 
     document.querySelectorAll('[data-lang-title]').forEach(el => { const key = el.getAttribute('data-lang-title'); if (translations[lang] && translations[lang][key]) el.title = translations[lang][key]; }); 
     document.querySelectorAll('[data-lang-placeholder]').forEach(el => { const key = el.getAttribute('data-lang-placeholder'); if (translations[lang] && translations[lang][key]) el.placeholder = translations[lang][key]; }); 
-    renderProjects(); renderLibrary();
+    
+    // Исправление ошибки с renderProjects is not defined в инкогнито
+    if (window.renderProjects) window.renderProjects(); 
+    if (window.renderLibrary) window.renderLibrary();
 };
 window.setTheme = function(color, glow, bg) { document.documentElement.style.setProperty('--theme-color', color); document.documentElement.style.setProperty('--theme-glow', glow); document.documentElement.style.setProperty('--theme-bg', bg); };
 
@@ -613,6 +635,7 @@ function closeModal(modalId) {
 window.addEventListener('DOMContentLoaded', () => {
 
     let isPianoActive = true;
+    let currentLibraryFilter = 'all';
 
     // --- СИНХРОНИЗАЦИЯ ИНСТРУМЕНТОВ ---
     const mainInst = document.getElementById('main-instrument'); const prInst = document.getElementById('pr-instrument');
@@ -679,20 +702,30 @@ window.addEventListener('DOMContentLoaded', () => {
     prProjNameInput.addEventListener('blur', e => { if(!e.target.value.trim()) e.target.value = translations[currentLang].default_proj_name; });
 
     // --- БИБЛИОТЕКА ЛОГИКА ---
+    // Фильтры
+    document.querySelectorAll('.lib-chip').forEach(chip => {
+        chip.addEventListener('click', (e) => {
+            document.querySelectorAll('.lib-chip').forEach(c => c.classList.remove('active'));
+            e.target.classList.add('active');
+            currentLibraryFilter = e.target.getAttribute('data-genre');
+            renderLibrary();
+        });
+    });
+
     async function renderLibrary() {
         const grid = document.getElementById('lib-grid-container'); 
         grid.innerHTML = '<div style="color:#00e5ff; text-align:center; width:100%; margin-top:50px; font-size:24px;">Загрузка библиотеки...</div>';
         
         let currentNick = document.getElementById('acc-nickname').value || "Guest Pianist";
         let published = [];
+        let libraryFavs = JSON.parse(localStorage.getItem('library_favs') || '[]');
 
-        // Скачиваем базу из Firebase
         if (window.fb) {
             try {
                 const querySnapshot = await window.fb.getDocs(window.fb.collection(window.db, "songs"));
                 querySnapshot.forEach((doc) => {
                     let data = doc.data();
-                    data.docId = doc.id; // Сохраняем реальный ID документа для удаления
+                    data.docId = doc.id;
                     published.push(data);
                 });
             } catch (err) {
@@ -700,9 +733,17 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         }
         
+        if (currentLibraryFilter !== 'all') {
+            if (currentLibraryFilter === 'favorites') {
+                published = published.filter(p => libraryFavs.includes(p.docId));
+            } else {
+                published = published.filter(p => p.genre === currentLibraryFilter);
+            }
+        }
+
         if (published.length === 0) { grid.innerHTML = `<div style="width: 100%; text-align: center; color: #aaa; font-size: 20px; font-weight: bold; margin-top: 50px; grid-column: 1 / -1;">${translations[currentLang].lib_empty}</div>`; return; }
 
-        grid.innerHTML = ''; // Очищаем надпись "Загрузка"
+        grid.innerHTML = '';
         published.reverse().forEach(p => {
             let card = document.createElement('div'); card.className = 'lib-card';
             let colors = ['#ff0055', '#00e5ff', '#ffcc00', '#b200ff', '#00ffaa'];
@@ -716,10 +757,18 @@ window.addEventListener('DOMContentLoaded', () => {
             if (p.author === currentNick) {
                 delBtnHTML = `<div class="lib-btn-delete" title="Delete from Library"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></div>`;
             }
+            
+            let isFav = libraryFavs.includes(p.docId);
+            let starColor = isFav ? '#ffcc00' : 'rgba(255,255,255,0.4)';
+            let favBtnHTML = `<div class="lib-btn-fav" title="Favorite"><svg width="18" height="18" viewBox="0 0 24 24" fill="${isFav ? '#ffcc00' : 'none'}" stroke="${starColor}" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></div>`;
+
+            let genreBadge = p.genre && p.genre !== 'trend' ? `<div style="position:absolute; bottom:5px; left:10px; background:rgba(0,0,0,0.6); padding:2px 8px; border-radius:10px; font-size:10px; font-weight:bold; border:1px solid ${c1}; color:${c1};">${p.genre.toUpperCase()}</div>` : '';
 
             card.innerHTML = `
                 ${delBtnHTML}
+                ${favBtnHTML}
                 <div class="lib-card-cover" style="background: linear-gradient(135deg, ${c1} 0%, #111 100%);">
+                    ${genreBadge}
                     <div class="lib-waveform">${waveHTML}</div>
                 </div>
                 <div class="lib-card-info">
@@ -737,15 +786,29 @@ window.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
 
-            // Обновленное удаление из базы Firebase
+            // Обработка Избранного
+            card.querySelector('.lib-btn-fav').addEventListener('click', (e) => {
+                e.stopPropagation();
+                let favs = JSON.parse(localStorage.getItem('library_favs') || '[]');
+                if (favs.includes(p.docId)) {
+                    favs = favs.filter(id => id !== p.docId);
+                } else {
+                    favs.push(p.docId);
+                }
+                localStorage.setItem('library_favs', JSON.stringify(favs));
+                renderLibrary();
+            });
+
             if (p.author === currentNick) {
                 card.querySelector('.lib-btn-delete').addEventListener('click', async (e) => {
                     e.stopPropagation();
-                    if (window.fb && p.docId) {
-                        try {
-                            await window.fb.deleteDoc(window.fb.doc(window.db, "songs", p.docId));
-                            renderLibrary(); // Перезагружаем после удаления
-                        } catch(err) { console.error(err); }
+                    if (confirm(translations[currentLang].del_confirm_lib || "Точно удалить этот проект из библиотеки для всех?")) {
+                        if (window.fb && p.docId) {
+                            try {
+                                await window.fb.deleteDoc(window.fb.doc(window.db, "songs", p.docId));
+                                renderLibrary(); 
+                            } catch(err) { console.error(err); }
+                        }
                     }
                 });
             }
@@ -762,7 +825,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
             card.querySelector('.lib-btn-remix').addEventListener('click', (e) => {
                 e.stopPropagation();
-                // Для ремиксов пока оставим локальное сохранение счетчика просмотров
                 currentProjectId = null; prNotes = JSON.parse(JSON.stringify(p.notes)); selectedNotes = []; document.getElementById('pr-bpm').value = p.bpm || 120;
                 prProjNameInput.value = p.name + " (Remix)"; document.querySelectorAll('.pr-note').forEach(el => el.remove()); updateAllPRNotes(); hasUnsavedChanges = true; switchView('create');
             });
@@ -770,6 +832,9 @@ window.addEventListener('DOMContentLoaded', () => {
             grid.appendChild(card);
         });
     }
+    
+    // Экспортируем глобально для setLang
+    window.renderLibrary = renderLibrary;
 
     // ИМПОРТ ИЗ КОДА
     document.getElementById('btn-lib-import').addEventListener('click', () => {
@@ -781,6 +846,8 @@ window.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- МОИ ПРОЕКТЫ И СОХРАНЕНИЕ ---
+    let pendingPublishProject = null;
+
     function renderProjects() {
         const container = document.getElementById('project-cards-container'); container.innerHTML = '';
         let projects = JSON.parse(localStorage.getItem('studio_projects') || '[]');
@@ -804,32 +871,11 @@ window.addEventListener('DOMContentLoaded', () => {
 
             let pubBtn = document.createElement('div'); pubBtn.className = 'card-action-btn'; pubBtn.title = "Publish to Library";
             pubBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>`;
-            pubBtn.addEventListener('click', async (e) => {
+            pubBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 if (!window.fb) return alert("Firebase загружается, подождите секунду...");
-
-                let pubProject = JSON.parse(JSON.stringify(p)); 
-                pubProject.pubId = Date.now(); 
-                pubProject.author = document.getElementById('acc-nickname').value || "Guest Pianist"; 
-                pubProject.likes = 0; 
-                pubProject.views = 0;
-
-                try {
-                    // Отправляем в облако Firebase!
-                    await window.fb.addDoc(window.fb.collection(window.db, "songs"), pubProject);
-                    
-                    // Сохраняем pubId у себя, чтобы знать, что это наш проект
-                    let projs = JSON.parse(localStorage.getItem('studio_projects') || '[]'); 
-                    let target = projs.find(x => x.id === p.id); 
-                    if(target) { 
-                        target.pubId = pubProject.pubId; 
-                        localStorage.setItem('studio_projects', JSON.stringify(projs)); 
-                    }
-                    alert(translations[currentLang].lib_pub_ok);
-                } catch (err) {
-                    console.error(err);
-                    alert("Ошибка публикации! Проверь настройки Firestore.");
-                }
+                pendingPublishProject = p;
+                openModal('publish-modal');
             });
 
             actions.appendChild(shareBtn); actions.appendChild(pubBtn); card.appendChild(nameInput); card.appendChild(info); card.appendChild(actions);
@@ -841,6 +887,38 @@ window.addEventListener('DOMContentLoaded', () => {
             container.appendChild(card);
         });
     }
+    
+    // Экспортируем глобально для setLang
+    window.renderProjects = renderProjects;
+
+    // Кнопка подтверждения публикации из модалки
+    document.getElementById('btn-confirm-publish').addEventListener('click', async () => {
+        if (!pendingPublishProject || !window.fb) return;
+        
+        let p = pendingPublishProject;
+        let pubProject = JSON.parse(JSON.stringify(p)); 
+        pubProject.pubId = Date.now(); 
+        pubProject.author = document.getElementById('acc-nickname').value || "Guest Pianist"; 
+        pubProject.genre = document.getElementById('publish-genre').value;
+        pubProject.likes = 0; 
+        pubProject.views = 0;
+
+        try {
+            await window.fb.addDoc(window.fb.collection(window.db, "songs"), pubProject);
+            
+            let projs = JSON.parse(localStorage.getItem('studio_projects') || '[]'); 
+            let target = projs.find(x => x.id === p.id); 
+            if(target) { 
+                target.pubId = pubProject.pubId; 
+                localStorage.setItem('studio_projects', JSON.stringify(projs)); 
+            }
+            alert(translations[currentLang].lib_pub_ok);
+            closeModal('publish-modal');
+        } catch (err) {
+            console.error(err);
+            alert("Ошибка публикации! Проверь настройки Firestore.");
+        }
+    });
 
     document.getElementById('btn-my-projects').addEventListener('click', () => { projectsButtons.style.display = 'none'; myProjectsList.style.display = 'flex'; myProjectsList.classList.add('fade-in'); btnMyProjBack.style.display = 'block'; btnMyProjBack.classList.add('fade-in'); isDeleteMode = false; projectsToDelete.clear(); btnDeleteMode.classList.remove('active'); renderProjects(); });
     btnMyProjBack.addEventListener('click', () => { myProjectsList.style.display = 'none'; myProjectsList.classList.remove('fade-in'); btnMyProjBack.style.display = 'none'; btnDeleteMode.style.display = 'none'; projectsButtons.style.display = 'flex'; projectsButtons.classList.add('fade-in'); isDeleteMode = false; projectsToDelete.clear(); btnDeleteMode.classList.remove('active'); });
@@ -936,6 +1014,35 @@ window.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'ArrowUp') { e.preventDefault(); let val = recText.value; let pos = recText.selectionStart; let textBefore = val.substring(0, pos); let textAfter = val.substring(pos); if (textBefore.length > 0 && !textBefore.endsWith('*2 ')) { let match = textBefore.match(/(\[[^\]]+\])\s*$/); if (match) { recText.value = textBefore.substring(0, textBefore.length - match[0].length) + match[1] + '*2 ' + textAfter; recText.selectionStart = recText.selectionEnd = pos + 2; } } return; }
         if (e.code === 'Space') { e.preventDefault(); let val = recText.value; let pos = recText.selectionStart; recText.value = val.substring(0, pos) + '- ' + val.substring(pos); recText.selectionStart = recText.selectionEnd = pos + 2; lastRecTime = 0; return; }
         if (!allowedKeys.includes(e.key)) { e.preventDefault(); } else if (e.key === 'Backspace' || e.key === 'Delete') { if (recText.selectionStart === recText.selectionEnd) { e.preventDefault(); let val = recText.value; let pos = recText.selectionStart; let textBefore = val.substring(0, pos); let textAfter = val.substring(pos); let match = textBefore.match(/(\[[^\]]+\]\*?2?\s*|-\s*)$/); if (match) { recText.value = textBefore.substring(0, textBefore.length - match[0].length) + textAfter; recText.selectionStart = recText.selectionEnd = pos - match[0].length; } else if (textBefore.length > 0) { recText.value = textBefore.slice(0, -1) + textAfter; recText.selectionStart = recText.selectionEnd = pos - 1; } } }
+    });
+
+    // Плеер для записанной песни
+    document.getElementById('btn-play-rec').addEventListener('click', () => {
+        let txt = recText.value;
+        if(!txt) return;
+        let bpm = parseInt(document.querySelector('#record-panel .bpm-input').value) || 120;
+        let msPerBeat = 60000 / bpm;
+        let tokens = txt.match(/\[.*?\](?:\*2)?|-/g) || [];
+        let t = 0;
+        tokens.forEach(tok => {
+            if (tok === '-') {
+                t += msPerBeat;
+            } else {
+                let isDouble = tok.includes('*2');
+                let notesStr = tok.replace(/\[|\]|\*2/g, '');
+                let notes = notesStr.split('+');
+                setTimeout(() => {
+                    notes.forEach(n => {
+                        let pd = PIANO_DATA.find(x => x.n === n);
+                        if(pd) {
+                            handleKeyAction(pd.idx, true, true);
+                            setTimeout(() => handleKeyAction(pd.idx, false, true), msPerBeat * (isDouble?2:0.5));
+                        }
+                    });
+                }, t);
+                t += msPerBeat * (isDouble?2:1);
+            }
+        });
     });
 
     const pContainer = document.getElementById('particles-container'); pContainer.innerHTML = ''; 
@@ -1184,8 +1291,8 @@ window.addEventListener('DOMContentLoaded', () => {
     
     function renderVis() {
         c2d.clearRect(0, 0, canvas.width, cHeight);
-        for (let k in aBlocks) { let b = aBlocks[k]; b.h += 8; c2d.fillStyle = b.c; c2d.shadowBlur = 15; c2d.shadowColor = b.c; c2d.fillRect(b.x, cHeight - b.h, b.w, b.h); }
-        for (let i = vBlocks.length - 1; i >= 0; i--) { let b = vBlocks[i]; b.y -= 8; c2d.fillStyle = b.c; c2d.shadowBlur = 15; c2d.shadowColor = b.c; c2d.fillRect(b.x, b.y - b.h, b.w, b.h); if (b.y - b.h < 0) vBlocks.splice(i, 1); }
+        for (let k in aBlocks) { let b = aBlocks[k]; b.h += 15; c2d.fillStyle = b.c; c2d.shadowBlur = 15; c2d.shadowColor = b.c; c2d.fillRect(b.x, cHeight - b.h, b.w, b.h); }
+        for (let i = vBlocks.length - 1; i >= 0; i--) { let b = vBlocks[i]; b.y -= 15; c2d.fillStyle = b.c; c2d.shadowBlur = 15; c2d.shadowColor = b.c; c2d.fillRect(b.x, b.y - b.h, b.w, b.h); if (b.y - b.h < 0) vBlocks.splice(i, 1); }
         c2d.shadowBlur = 5;
         for (let i = sparks.length - 1; i >= 0; i--) { let p = sparks[i]; p.x += p.vx; p.y += p.vy; p.vy += 0.5; p.l -= 0.04; c2d.globalAlpha = Math.max(0, p.l); c2d.fillStyle = p.c; c2d.shadowColor = p.c; c2d.fillRect(p.x, p.y, 4, 4); if (p.l <= 0) sparks.splice(i, 1); }
         c2d.globalAlpha = 1; c2d.shadowBlur = 0; requestAnimationFrame(renderVis);
