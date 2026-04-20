@@ -718,7 +718,8 @@ window.addEventListener('DOMContentLoaded', () => {
         
         let currentNick = document.getElementById('acc-nickname').value || "Guest Pianist";
         let published = [];
-        let libraryFavs = JSON.parse(localStorage.getItem('library_favs') || '[]');
+        let libraryFavs = [];
+        try { libraryFavs = JSON.parse(localStorage.getItem('library_favs') || '[]'); } catch(e) {}
 
         if (window.fb) {
             try {
@@ -1319,6 +1320,10 @@ window.addEventListener('DOMContentLoaded', () => {
   const app = initializeApp(firebaseConfig);
   window.db = getFirestore(app);
   window.fb = { collection, addDoc, getDocs, deleteDoc, doc };
-</script>
+</script> 
+// Принудительно обновляем библиотеку, когда Firebase 100% загрузился
+  setTimeout(() => {
+      if (window.renderLibrary) window.renderLibrary();
+  }, 500);
 </body>
 </html>
