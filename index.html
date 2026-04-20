@@ -979,9 +979,21 @@ window.addEventListener('DOMContentLoaded', () => {
     accFontSelect.addEventListener('change', (e) => { accNickname.style.fontFamily = e.target.value; });
     accColorPicker.addEventListener('input', (e) => { 
         let hex = e.target.value; let r = parseInt(hex.substring(1,3), 16); let g = parseInt(hex.substring(3,5), 16); let b = parseInt(hex.substring(5,7), 16);
-        if (b > 180 && r < 120 && g < 150) { alert(translations[currentLang].alert_owner); accColorPicker.value = "#ffffff"; accNickname.style.color = "#ffffff"; } 
-        else if (r > 180 && g < 120 && b < 120) { alert(translations[currentLang].alert_admin); accColorPicker.value = "#ffffff"; accNickname.style.color = "#ffffff"; } 
-        else { accNickname.style.color = hex; }
+        
+        // Если ты Владелец — тебе можно брать ЛЮБОЙ цвет!
+        if (window.isOwner) {
+            accNickname.style.color = hex;
+        } 
+        // А вот обычных юзеров бьем по рукам за синий и красный:
+        else if (b > 180 && r < 120 && g < 150) { 
+            alert(translations[currentLang].alert_owner); accColorPicker.value = "#ffffff"; accNickname.style.color = "#ffffff"; 
+        } 
+        else if (r > 180 && g < 120 && b < 120) { 
+            alert(translations[currentLang].alert_admin); accColorPicker.value = "#ffffff"; accNickname.style.color = "#ffffff"; 
+        } 
+        else { 
+            accNickname.style.color = hex; 
+        }
     });
 
     document.getElementById('side-help').addEventListener('click', () => { if (document.getElementById('help-modal').classList.contains('show')) closeModal('help-modal'); else openModal('help-modal'); }); 
