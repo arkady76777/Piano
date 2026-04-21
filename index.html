@@ -568,8 +568,10 @@
         <div class="acc-avatar" id="user-photo">
             👤
         </div>
+        <input type="file" id="avatar-input" style="display: none;" accept="image/*">
+<button id="btn-change-photo" class="action-btn" style="margin-top: 10px; font-size: 11px;">🖼 Изменить фото</button>
         <div class="acc-info">
-            <input type="text" id="acc-nickname" placeholder="Твой ник..." readonly style="margin-bottom: 15px; width: 100%; font-size: 36px; font-weight: bold; background: transparent; border: none; color: #fff; outline: none; border-bottom: 2px dashed rgba(255,255,255,0.3);">
+            <input type="text" id="acc-nickname" placeholder="Твой ник..." style="margin-bottom: 15px; width: 100%; font-size: 36px; font-weight: bold; background: transparent; border: none; color: #fff; outline: none; border-bottom: 2px dashed rgba(255,255,255,0.3);">
             
             <div style="display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap;">
                  <select id="acc-font" class="action-btn" style="background: rgba(0,0,0,0.5);">
@@ -1332,11 +1334,50 @@ document.getElementById('btn-logout').addEventListener('click', async () => {
     await window.auth.signOut();
     location.reload(); // Перезагружаем страницу, чтобы очистить данные
 });
+
+    document.getElementById('btn-change-photo').addEventListener('click', () => {
+    document.getElementById('avatar-input').click();
+});
+
+document.getElementById('avatar-input').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file || !window.auth.currentUser) return;
+
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        const img = new Image();
+        img.onload = async function() {
+            // Сжимаем картинку, чтобы обмануть гугл
+            const canvas = document.createElement('canvas');
+            const maxSize = 150;
+            canvas.width = maxSize; canvas.height = maxSize;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, maxSize, maxSize);
+            
+            // Превращаем в текст
+            const base64Avatar = canvas.toDataURL('image/jpeg', 0.8);
+            
+            // Показываем на экране
+            document.querySelector('.acc-avatar').innerHTML = `<img src="${base64Avatar}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+            
+            // Сохраняем в БД!
+            const userRef = window.fb.doc(window.db, "users", window.auth.currentUser.uid);
+            try {
+                await window.fb.setDoc(userRef, { avatar: base64Avatar }, { merge: true });
+                alert("Аватарка успешно обновлена! Облако нам не нужно 😎");
+            } catch (err) {
+                console.error(err); alert("Ошибка сохранения!");
+            }
+        };
+        img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+});
     
 </script>
     <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   // Добавили инструменты для входа
   import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
@@ -1355,7 +1396,7 @@ document.getElementById('btn-logout').addEventListener('click', async () => {
   window.provider = new GoogleAuthProvider();
   
   // Отправляем функции наружу, чтобы кнопки могли их использовать
-  window.fb = { collection, addDoc, getDocs, deleteDoc, doc, signInWithPopup, signOut, provider };
+  window.fb = { collection, addDoc, getDocs, deleteDoc, doc, setDoc, getDoc, signInWithPopup, signOut, provider };
 
   // Эта штука постоянно следит, вошел ты или нет
   onAuthStateChanged(window.auth, (user) => {
@@ -1380,6 +1421,12 @@ document.getElementById('btn-logout').addEventListener('click', async () => {
           document.querySelector('.logo').innerText = "VIRTUAL PIANO (OWNER)";
           document.querySelector('.logo').style.color = "#0066ff"; 
       }
+        // Загружаем нашу хакерскую аватарку из БД
+      window.fb.getDoc(window.fb.doc(window.db, "users", user.uid)).then(docSnap => {
+          if (docSnap.exists() && docSnap.data().avatar) {
+              document.querySelector('.acc-avatar').innerHTML = `<img src="${docSnap.data().avatar}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+          }
+      });
     } else {
       console.log("Никто не вошел");
       window.isOwner = false;
