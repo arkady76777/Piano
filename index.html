@@ -1005,6 +1005,12 @@ window.addEventListener('DOMContentLoaded', () => {
                 });
             } catch (err) {
                 console.error("Ошибка загрузки:", err);
+                grid.innerHTML = `<div style="color:#ff0055; width:100%; text-align:center; margin-top: 20px;">
+                    <h3>❌ Ошибка связи с базой данных</h3>
+                    <p style="color:#aaa; font-size:14px; margin-top:10px;">${err.message}</p>
+                    <p style="color:#aaa; font-size:14px;">(Скорее всего, в Firebase истек срок Test Mode. Зайди в Rules и поставь allow read, write: if true;)</p>
+                </div>`;
+                return;
             }
         }
         
