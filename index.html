@@ -443,6 +443,19 @@
             #rotate-device { display: flex !important; }
             #controls, #sidebar, #workspace-wrapper { display: none !important; }
         }
+/* --- СТИЛИ ДЛЯ МАСШТАБА ПИАНИНО --- */
+#zoom-controls { display: none; }
+@media (max-width: 1024px) {
+    #zoom-controls {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        margin-left: 15px;
+    }
+}
+#studio-container { overflow-x: auto; overflow-y: hidden; }
+#piano { min-width: 100%; transition: width 0.1s ease-out; }
+        
     </style>
 </head>
 <body>
@@ -555,6 +568,10 @@
             </select>
             <label data-lang="vol">Громкость:</label>
             <input type="range" class="vol-slider" min="0" max="1" step="0.01" value="0.4">
+            <div id="zoom-controls">
+    <span style="color: #fff; font-size: 14px;">Масштаб:</span>
+    <input type="range" id="zoom-slider" min="100" max="300" step="10" value="100" style="width: 80px;">
+</div>
         </div>
     </div>
 
@@ -2700,6 +2717,18 @@ document.getElementById('avatar-input').addEventListener('change', (e) => {
         img.src = event.target.result;
     };
     reader.readAsDataURL(file);
+});
+
+// --- ЛОГИКА МАСШТАБА ПИАНИНО ---
+document.addEventListener('DOMContentLoaded', () => {
+    const zoomSlider = document.getElementById('zoom-slider');
+    const pianoElement = document.getElementById('piano');
+
+    if (zoomSlider && pianoElement) {
+        zoomSlider.addEventListener('input', (e) => {
+            pianoElement.style.width = e.target.value + '%';
+        });
+    }
 });
     
 </script>
