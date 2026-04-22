@@ -797,6 +797,34 @@ let isDeleteMode = false;
 let projectsToDelete = new Set();
 const badWords = ['shit', 'fuck', 'bitch', 'ass', 'хуй', 'пизд', 'еба', 'бля', 'сука', 'salak', 'amk', 'bok', 'nazi', 'порно', 'sex', 'porn'];
 
+// --- ЗАГРУЗКА РЕАЛЬНЫХ ЗВУКОВ ---
+const audioBuffers = {};
+
+async function loadRealSounds() {
+    const ctx = getContext();
+    const sounds = {
+        piano: 'piano.mp3',
+        musicbox: 'musicbox.mp3',
+        megalovania: 'megalo.wav'
+    };
+
+    for (let inst in sounds) {
+        try {
+            const response = await fetch(sounds[inst]);
+            const arrayBuffer = await response.arrayBuffer();
+            audioBuffers[inst] = await ctx.decodeAudioData(arrayBuffer);
+            console.log('Успешно загружен звук:', inst);
+        } catch (e) {
+            console.error('Не удалось загрузить', inst, 'Проверь путь к папке sounds!');
+        }
+    }
+}
+
+// Загружаем звуки при первом клике (браузеры блокируют аудио до клика)
+document.addEventListener('click', () => {
+    if (!audioBuffers.piano) loadRealSounds();
+}, { once: true });
+
 window.setLang = function(lang) { 
     currentLang = lang;
     document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active')); 
@@ -1900,60 +1928,36 @@ window.addEventListener('DOMContentLoaded', () => {
     let isSustainPedalOn = false;
 
     function createPatch(ctx, freq, type) {
-        const out = ctx.createGain(); 
-        out.connect(masterGain); 
-        let oscs = [], filter = null; 
-        let a = 0.01, d = 0.5, s = 0.5, r = 0.5;
-        
-        if (type === 'piano') { 
-            a = 0.015; d = 2.5; s = 0.0; r = 0.8; 
-            const osc1 = ctx.createOscillator(); osc1.type = 'triangle'; 
-            const osc2 = ctx.createOscillator(); osc2.type = 'sine'; osc2.detune.value = 1200; 
-            const osc3 = ctx.createOscillator(); osc3.type = 'sine'; osc3.detune.value = 1902; 
-            filter = ctx.createBiquadFilter(); filter.type = 'lowpass'; 
-            filter.frequency.setValueAtTime(4000, ctx.currentTime); 
-            filter.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + d); 
-            
-            const g1 = ctx.createGain(); g1.gain.value = 1.0; osc1.connect(g1); g1.connect(filter); 
-            const g2 = ctx.createGain(); g2.gain.value = 0.3; osc2.connect(g2); g2.connect(filter); 
-            const g3 = ctx.createGain(); g3.gain.value = 0.1; osc3.connect(g3); g3.connect(filter); 
-            
-            filter.connect(out); oscs.push(osc1, osc2, osc3);
-        } else if (type === 'megalovania') { 
-            a = 0.01; d = 0.2; s = 0.5; r = 0.1; 
-            const osc1 = ctx.createOscillator(); osc1.type = 'square'; 
-            const osc2 = ctx.createOscillator(); osc2.type = 'sawtooth'; osc2.detune.value = -15; 
-            filter = ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 6000; 
-            
-            const g1 = ctx.createGain(); g1.gain.value = 0.9; osc1.connect(g1); g1.connect(filter); 
-            const g2 = ctx.createGain(); g2.gain.value = 0.4; osc2.connect(g2); g2.connect(filter); 
-            
-            filter.connect(out); oscs.push(osc1, osc2);
-        } else if (type === 'musicbox') { 
-            a = 0.005; d = 1.0; s = 0.0; r = 0.2; 
-            const osc1 = ctx.createOscillator(); osc1.type = 'sine'; 
-            const osc2 = ctx.createOscillator(); osc2.type = 'triangle'; osc2.detune.value = 1200; 
-            filter = ctx.createBiquadFilter(); filter.type = 'highpass'; filter.frequency.value = 800; 
-            
-            const g1 = ctx.createGain(); g1.gain.value = 0.8; osc1.connect(g1); g1.connect(filter); 
-            const g2 = ctx.createGain(); g2.gain.value = 0.3; osc2.connect(g2); g2.connect(filter); 
-            
-            filter.connect(out); oscs.push(osc1, osc2);
-        } else { 
-            a = 0.05; d = 0.1; s = 0.8; r = 0.3; 
-            const osc1 = ctx.createOscillator(); osc1.type = 'sine'; 
-            osc1.connect(out); oscs.push(osc1); 
-        }
-        
-        oscs.forEach(o => o.frequency.setValueAtTime(freq, ctx.currentTime)); 
+        const out = ctx.createGain();
+        out.connect(masterGain);
         const t = ctx.currentTime;
-        out.gain.setValueAtTime(0, t); 
-        out.gain.linearRampToValueAtTime(1, t + a); 
-        
-        if (s === 0) out.gain.exponentialRampToValueAtTime(0.001, t + a + d); 
-        else out.gain.linearRampToValueAtTime(s, t + a + d); 
-        
-        return { oscs, out, r, s };
+
+        // Если это синус ИЛИ реальный файл еще не загрузился - играем математический звук
+        if (type === 'sine' || !audioBuffers[type]) {
+            let a = 0.05, d = 0.1, s = 0.8, r = 0.3;
+            const osc = ctx.createOscillator();
+            osc.type = type === 'sine' ? 'sine' : 'triangle'; 
+            osc.frequency.setValueAtTime(freq, t);
+            osc.connect(out);
+
+            out.gain.setValueAtTime(0, t);
+            out.gain.linearRampToValueAtTime(1, t + a);
+            out.gain.exponentialRampToValueAtTime(0.001, t + a + d);
+
+            return { oscs: [osc], out, r, s, isSample: false };
+        }
+
+        // --- МАГИЯ РЕАЛЬНЫХ СЭМПЛОВ ---
+        const source = ctx.createBufferSource();
+        source.buffer = audioBuffers[type];
+        source.playbackRate.value = freq / 261.63; // Подстраиваем под ноту До
+        source.connect(out);
+
+        let r = type === 'piano' ? 1.2 : (type === 'musicbox' ? 2.0 : 0.4);
+        out.gain.setValueAtTime(0, t);
+        out.gain.linearRampToValueAtTime(1, t + 0.02);
+
+        return { source, out, r, s: 1, isSample: true };
     }
 
     function handleKeyAction(idx, isPress, isAuto = false, noteInst = null) {
@@ -1965,7 +1969,8 @@ window.addEventListener('DOMContentLoaded', () => {
                 const ctx = getContext(); 
                 let instToUse = noteInst ? noteInst : (isAuto ? prInst.value : mainInst.value); 
                 const patch = createPatch(ctx, PIANO_DATA[idx].f, instToUse); 
-                patch.oscs.forEach(o => o.start()); 
+                if (patch.isSample) patch.source.start();
+                else patch.oscs.forEach(o => o.start());
                 activeNotes[idx] = patch; 
             }
             sustainedNotes.delete(idx); 
@@ -2003,7 +2008,11 @@ window.addEventListener('DOMContentLoaded', () => {
         patch.out.gain.cancelScheduledValues(t); 
         patch.out.gain.setValueAtTime(cg, t); 
         patch.out.gain.exponentialRampToValueAtTime(0.001, t + patch.r); 
-        patch.oscs.forEach(o => o.stop(t + patch.r)); 
+        if (patch.isSample) {
+            patch.source.stop(t + patch.r);
+        } else {
+            patch.oscs.forEach(o => o.stop(t + patch.r));
+        }
         delete activeNotes[idx]; 
         sustainedNotes.delete(idx); 
     }
