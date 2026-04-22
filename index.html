@@ -2780,10 +2780,19 @@ document.addEventListener('DOMContentLoaded', () => {
           document.querySelector('.logo').style.color = "#0066ff"; 
       }
       
-      // Загружаем нашу хакерскую аватарку из БД
+      // Загружаем сохраненные данные профиля (аватарку, имя, описание) из БД
       window.fb.getDoc(window.fb.doc(window.db, "users", user.uid)).then(docSnap => {
-          if (docSnap.exists() && docSnap.data().avatar) {
-              document.querySelector('.acc-avatar').innerHTML = `<img src="${docSnap.data().avatar}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+          if (docSnap.exists()) {
+              const data = docSnap.data();
+              if (data.avatar) {
+                  document.querySelector('.acc-avatar').innerHTML = `<img src="${data.avatar}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+              }
+              if (data.nickname) {
+                  document.getElementById('acc-nickname').value = data.nickname;
+              }
+              if (data.bio) {
+                  document.getElementById('acc-bio').value = data.bio;
+              }
           }
       });
     } else {
@@ -2800,6 +2809,24 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
       if (window.renderLibrary) window.renderLibrary();
   }, 500);
+    // --- АВТОСОХРАНЕНИЕ ИМЕНИ И ОПИСАНИЯ ПРОФИЛЯ ---
+  
+  // Сохраняем имя, когда пользователь закончил ввод
+  document.getElementById('acc-nickname').addEventListener('blur', async (e) => {
+      if (window.auth && window.auth.currentUser) {
+          const userRef = window.fb.doc(window.db, "users", window.auth.currentUser.uid);
+          // merge: true означает, что мы только обновляем имя, не трогая аватарку и описание
+          await window.fb.setDoc(userRef, { nickname: e.target.value }, { merge: true });
+      }
+  });
+
+  // Сохраняем описание (bio), когда пользователь закончил ввод
+  document.getElementById('acc-bio').addEventListener('blur', async (e) => {
+      if (window.auth && window.auth.currentUser) {
+          const userRef = window.fb.doc(window.db, "users", window.auth.currentUser.uid);
+          await window.fb.setDoc(userRef, { bio: e.target.value }, { merge: true });
+      }
+  });
 </script> 
 </body>
 </html>
