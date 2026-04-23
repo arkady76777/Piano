@@ -1997,12 +1997,16 @@ window.addEventListener('DOMContentLoaded', () => {
             startVisualBlock(idx, PIANO_DATA[idx]); 
             createSparks(PIANO_DATA[idx]);
         } else {
-            if (!activeNotes[idx] && !isAuto) return; 
-            domElements[idx].classList.remove('active'); 
-            stopVisualBlock(idx);
-            if (isSustainPedalOn && !isAuto) sustainedNotes.add(idx); 
-            else killPatch(idx);
-        }
+            // СНАЧАЛА всегда убираем визуальное нажатие (даже если звука не было)
+            if (domElements[idx]) domElements[idx].classList.remove('active'); 
+            stopVisualBlock(idx);
+
+            // А уже потом проверяем, нужно ли останавливать звук
+            if (!activeNotes[idx] && !isAuto) return; 
+
+            if (isSustainPedalOn && !isAuto) sustainedNotes.add(idx); 
+            else killPatch(idx);
+        }
     }
 
     function killPatch(idx) { 
