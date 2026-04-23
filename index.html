@@ -1974,10 +1974,12 @@ window.addEventListener('DOMContentLoaded', () => {
 
     let bufferToPlay = null;
     
-    // Выбираем правильный файл: если пианино, берем конкретную ноту из массива
+    // Теперь мы проверяем и пианино, и флейту по номеру ноты (noteIdx)
     if (type === 'piano' && audioBuffers.piano[noteIdx]) {
         bufferToPlay = audioBuffers.piano[noteIdx];
-    } else if (type !== 'piano' && type !== 'sine' && audioBuffers[type]) {
+    } else if (type === 'flute' && audioBuffers.flute[noteIdx]) {
+        bufferToPlay = audioBuffers.flute[noteIdx];
+    } else if (type !== 'piano' && type !== 'flute' && type !== 'sine' && audioBuffers[type]) {
         bufferToPlay = audioBuffers[type];
     }
 
