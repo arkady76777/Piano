@@ -1968,55 +1968,52 @@ window.addEventListener('DOMContentLoaded', () => {
     let isSustainPedalOn = false;
 
     function createPatch(ctx, freq, type, noteIdx) {
-    const out = ctx.createGain();
-    out.connect(masterGain);
-    const t = ctx.currentTime;
+        const out = ctx.createGain();
+        out.connect(masterGain);
+        const t = ctx.currentTime;
 
-    let bufferToPlay = null;
-    
-    // Если это многоголосный инструмент (пианино или флейта)
-    if (type === 'piano' || type === 'flute') {
-        bufferToPlay = audioBuffers[type][noteIdx];
-    } 
-    // Если это одиночный звук (шкатулка или мегалования)
-    else if (type === 'musicbox' || type === 'megalovania') {
-        bufferToPlay = audioBuffers[type];
-    }
+        let bufferToPlay = null;
+        
+        // Если это многоголосный инструмент (пианино или флейта)
+        if (type === 'piano' || type === 'flute') {
+            bufferToPlay = audioBuffers[type][noteIdx];
+        } 
+        // Если это одиночный звук (шкатулка или мегалования)
+        else if (type === 'musicbox' || type === 'megalovania') {
+            bufferToPlay = audioBuffers[type];
+        }
 
-    // ВАЖНО: Если звук ещё не скачался или это синус — переходим на синтезатор
-    if (type === 'sine' || !bufferToPlay || !(bufferToPlay instanceof AudioBuffer)) {
+        // ВАЖНО: Если звук ещё не скачался, это синус, ИЛИ файл "битый" — переходим на синтезатор
+        if (type === 'sine' || !bufferToPlay || !(bufferToPlay instanceof AudioBuffer)) {
+            let a = 0.02, d = 0.1, s = 0.7, r = 0.2;
+            const osc = ctx.createOscillator();
+            osc.type = type === 'sine' ? 'sine' : 'triangle'; 
+            osc.frequency.setValueAtTime(freq, t);
+            osc.connect(out);
+            out.gain.setValueAtTime(0, t);
+            out.gain.linearRampToValueAtTime(1, t + a);
+            return { oscs: [osc], out, r, s, isSample: false };
+        }
 
-    // Если это синус ИЛИ нужный файл не успел загрузиться
-    if (type === 'sine' || !bufferToPlay) {
-        let a = 0.02, d = 0.1, s = 0.7, r = 0.2;
-        const osc = ctx.createOscillator();
-        osc.type = type === 'sine' ? 'sine' : 'triangle'; 
-        osc.frequency.setValueAtTime(freq, t);
-        osc.connect(out);
+        // --- ИСПОЛЬЗУЕМ РЕАЛЬНЫЙ ФАЙЛ ---
+        const source = ctx.createBufferSource();
+        source.buffer = bufferToPlay;
+
+        // Секрет идеального звука: не искажать частоту для пианино и флейты!
+        if (type === 'piano' || type === 'flute') {
+            source.playbackRate.value = 1; 
+        } else {
+            source.playbackRate.value = freq / 261.63; // Для шкатулки оставляем растягивание
+        }
+
+        source.connect(out);
+
+        let r = type === 'piano' ? 1.5 : (type === 'musicbox' ? 2.0 : 0.4);
         out.gain.setValueAtTime(0, t);
-        out.gain.linearRampToValueAtTime(1, t + a);
-        return { oscs: [osc], out, r, s, isSample: false };
+        out.gain.linearRampToValueAtTime(1, t + 0.02);
+
+        return { source, out, r, s: 1, isSample: true };
     }
-
-    // --- ИСПОЛЬЗУЕМ РЕАЛЬНЫЙ ФАЙЛ ---
-    const source = ctx.createBufferSource();
-    source.buffer = bufferToPlay;
-
-    // Секрет идеального звука: не искажать частоту для пианино!
-    if (type === 'piano') {
-        source.playbackRate.value = 1; 
-    } else {
-        source.playbackRate.value = freq / 261.63; // Для шкатулки оставляем растягивание
-    }
-
-    source.connect(out);
-
-    let r = type === 'piano' ? 1.5 : (type === 'musicbox' ? 2.0 : 0.4); // Пианино теперь затухает красивее
-    out.gain.setValueAtTime(0, t);
-    out.gain.linearRampToValueAtTime(1, t + 0.02);
-
-    return { source, out, r, s: 1, isSample: true };
-}
 
     function handleKeyAction(idx, isPress, isAuto = false, noteInst = null) {
         if (!isPianoActive && !isAuto) return; 
