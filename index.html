@@ -838,12 +838,15 @@ async function loadSounds() {
     console.log("✅ Все звуки (Студия + Мегалования) успешно загружены!");
 }
 
-// ВАЖНО: Браузеры запрещают скачивать музыку до первого клика по экрану.
-// Поэтому мы повесим загрузку на самый первый клик пользователя в любом месте сайта!
-document.body.addEventListener('click', () => {
+// Запускаем аудиодвижок при ЛЮБОМ первом контакте с сайтом
+const initAudioEngine = () => {
     if (audioCtx.state === 'suspended') audioCtx.resume();
     loadSounds();
-}, { once: true });
+};
+
+document.body.addEventListener('click', initAudioEngine, { once: true });
+window.addEventListener('keydown', initAudioEngine, { once: true });
+document.body.addEventListener('touchstart', initAudioEngine, { once: true });
 
 window.setLang = function(lang) { 
     currentLang = lang;
@@ -2018,9 +2021,11 @@ window.addEventListener('DOMContentLoaded', () => {
 
         // 1. ЕСЛИ ЗВУК СТУДИЙНЫЙ (Библиотека)
         if (activeObj.isStudio) {
-            // Библиотека сама умеет делать красивое и естественное затухание струны
-            activeObj.node.stop(t + 0.3); // 0.3 секунды на плавный хвост
-        } 
+            // Проверяем, успела ли нота создаться, прежде чем её останавливать
+            if (activeObj.node && activeObj.node.stop) {
+                activeObj.node.stop(t + 0.3); 
+            }
+        }
         // 2. ЕСЛИ ЗВУК СТАРЫЙ (Твой код для синуса и Мегаловании)
         else {
             const patch = activeObj.patch;
