@@ -2361,7 +2361,8 @@ window.addEventListener('DOMContentLoaded', () => {
                     startY = e.clientY; 
                 }
             }
-
+        }
+    });
     window.addEventListener('mousemove', (e) => {
         if (!prAction) { 
             if (e.target.classList && e.target.classList.contains('pr-note') && (currentPrTool === 'draw' || currentPrTool === 'select')) { 
