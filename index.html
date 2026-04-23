@@ -1974,14 +1974,17 @@ window.addEventListener('DOMContentLoaded', () => {
 
     let bufferToPlay = null;
     
-    // Теперь мы проверяем и пианино, и флейту по номеру ноты (noteIdx)
-    if (type === 'piano' && audioBuffers.piano[noteIdx]) {
-        bufferToPlay = audioBuffers.piano[noteIdx];
-    } else if (type === 'flute' && audioBuffers.flute[noteIdx]) {
-        bufferToPlay = audioBuffers.flute[noteIdx];
-    } else if (type !== 'piano' && type !== 'flute' && type !== 'sine' && audioBuffers[type]) {
+    // Если это многоголосный инструмент (пианино или флейта)
+    if (type === 'piano' || type === 'flute') {
+        bufferToPlay = audioBuffers[type][noteIdx];
+    } 
+    // Если это одиночный звук (шкатулка или мегалования)
+    else if (type === 'musicbox' || type === 'megalovania') {
         bufferToPlay = audioBuffers[type];
     }
+
+    // ВАЖНО: Если звук ещё не скачался или это синус — переходим на синтезатор
+    if (type === 'sine' || !bufferToPlay || !(bufferToPlay instanceof AudioBuffer)) {
 
     // Если это синус ИЛИ нужный файл не успел загрузиться
     if (type === 'sine' || !bufferToPlay) {
