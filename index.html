@@ -1950,25 +1950,12 @@ window.addEventListener('DOMContentLoaded', () => {
         source.playbackRate.value = freq / 261.63; // Подстройка под ноту До
         source.connect(out);
 
-        let r = type === 'piano' ? 0.8 : (type === 'musicbox' ? 2.0 : 0.4);
-        out.gain.setValueAtTime(0, t);
-        out.gain.linearRampToValueAtTime(1, t + 0.01);
-
-        return { source, out, r, s: 1, isSample: true };
-    }}
-
-        // --- МАГИЯ РЕАЛЬНЫХ СЭМПЛОВ ---
-        const source = ctx.createBufferSource();
-        source.buffer = audioBuffers[type];
-        source.playbackRate.value = freq / 261.63; // Подстраиваем под ноту До
-        source.connect(out);
-
         let r = type === 'piano' ? 1.2 : (type === 'musicbox' ? 2.0 : 0.4);
-        out.gain.setValueAtTime(0, t);
-        out.gain.linearRampToValueAtTime(1, t + 0.02);
+        out.gain.setValueAtTime(0, t);
+        out.gain.linearRampToValueAtTime(1, t + 0.02);
 
-        return { source, out, r, s: 1, isSample: true };
-    }
+        return { source, out, r, s: 1, isSample: true };
+    }
 
     function handleKeyAction(idx, isPress, isAuto = false, noteInst = null) {
         if (!isPianoActive && !isAuto) return; 
@@ -2345,71 +2332,39 @@ window.addEventListener('DOMContentLoaded', () => {
                 return; 
             }
             if (currentPrTool === 'draw') {
-                if (!noteEl) { 
-                    if (e.target.id === 'pr-grid') { 
-  if (currentPrTool === 'draw') {
-                if (!noteEl) { 
-                    if (e.target.id === 'pr-grid') { 
-                        selectedNotes = []; updateAllPRNotes();
-                        saveHistory(); 
-                        let col = Math.floor(e.offsetX / snapPx) * (4 / gridSnapDivs); 
-                        let row = Math.floor(e.offsetY / prZoomH); 
-                        if (row >= 0 && row <= 87) { 
-                            let newNote = { id: Date.now() + Math.random(), p: 87 - row, c: col, d: currentNoteLength, i: prInst.value }; 
-                            prNotes.push(newNote); renderPRNote(newNote); 
-                            actionNote = newNote; originalNote = { ...newNote }; 
-                            originalSelectedNotes = [{...newNote}]; 
-                            actionNote.hasMoved = true; hasUnsavedChanges = true; 
-                            prAction = 'move'; startX = e.clientX; startY = e.clientY; 
-                            
-                            // --- ВОТ ЭТОТ КУСОК ИСПРАВЛЕН ---
-                            handleKeyAction(newNote.p, true, true, newNote.i); 
-                            setTimeout(() => handleKeyAction(newNote.p, false, true, newNote.i), 200);
-                            // -------------------------------
-                        } 
-                    } 
-                } else {
-                    // ... (остальной код в else оставляй как есть)                      selectedNotes = []; updateAllPRNotes();
-                        saveHistory(); 
-                        let col = Math.floor(e.offsetX / snapPx) * (4 / gridSnapDivs); 
-                        let row = Math.floor(e.offsetY / prZoomH); 
-                        if (row >= 0 && row <= 87) { 
-                            let newNote = { id: Date.now() + Math.random(), p: 87 - row, c: col, d: currentNoteLength, i: prInst.value }; 
-                            prNotes.push(newNote); renderPRNote(newNote); 
-                            actionNote = newNote; originalNote = { ...newNote }; 
-                            originalSelectedNotes = [{...newNote}]; 
-                            actionNote.hasMoved = true; hasUnsavedChanges = true; 
-                            prAction = 'move'; startX = e.clientX; startY = e.clientY; 
-                            
-                            let ctx = getContext(); 
-                            let patch = createPatch(ctx, PIANO_DATA[newNote.p].f, newNote.i); 
-                            patch.oscs.forEach(o => o.start()); 
-                            setTimeout(() => { 
-                                let t = ctx.currentTime; 
-                                patch.out.gain.cancelScheduledValues(t); 
-                                patch.out.gain.setValueAtTime(patch.out.gain.value, t); 
-                                patch.out.gain.exponentialRampToValueAtTime(0.001, t + 0.1); 
-                                patch.oscs.forEach(o => o.stop(t + 0.1)); 
-                            }, 150); 
-                        } 
-                    } 
-                } else { 
-                    let id = parseFloat(noteEl.getAttribute('data-id')); 
-                    actionNote = prNotes.find(n => n.id === id); 
-                    originalNote = { ...actionNote }; 
-                    originalSelectedNotes = prNotes.filter(n => selectedNotes.includes(n.id)).map(n => ({...n})); 
-                    actionNote.hasMoved = false; 
-                    let rect = noteEl.getBoundingClientRect(); 
-                    let mouseX = e.clientX - rect.left; 
-                    if (mouseX < 8) prAction = 'resize-l'; 
-                    else if (mouseX > rect.width - 8) prAction = 'resize-r'; 
-                    else prAction = 'move'; 
-                    startX = e.clientX; 
-                    startY = e.clientY; 
-                }
-            }
-        }
-    });
+                if (!noteEl) { 
+                    if (e.target.id === 'pr-grid') { 
+                        selectedNotes = []; updateAllPRNotes();
+                        saveHistory(); 
+                        let col = Math.floor(e.offsetX / snapPx) * (4 / gridSnapDivs); 
+                        let row = Math.floor(e.offsetY / prZoomH); 
+                        if (row >= 0 && row <= 87) { 
+                            let newNote = { id: Date.now() + Math.random(), p: 87 - row, c: col, d: currentNoteLength, i: prInst.value }; 
+                            prNotes.push(newNote); renderPRNote(newNote); 
+                            actionNote = newNote; originalNote = { ...newNote }; 
+                            originalSelectedNotes = [{...newNote}]; 
+                            actionNote.hasMoved = true; hasUnsavedChanges = true; 
+                            prAction = 'move'; startX = e.clientX; startY = e.clientY; 
+                            
+                            handleKeyAction(newNote.p, true, true, newNote.i); 
+                            setTimeout(() => handleKeyAction(newNote.p, false, true, newNote.i), 200);
+                        } 
+                    } 
+                } else { 
+                    let id = parseFloat(noteEl.getAttribute('data-id')); 
+                    actionNote = prNotes.find(n => n.id === id); 
+                    originalNote = { ...actionNote }; 
+                    originalSelectedNotes = prNotes.filter(n => selectedNotes.includes(n.id)).map(n => ({...n})); 
+                    actionNote.hasMoved = false; 
+                    let rect = noteEl.getBoundingClientRect(); 
+                    let mouseX = e.clientX - rect.left; 
+                    if (mouseX < 8) prAction = 'resize-l'; 
+                    else if (mouseX > rect.width - 8) prAction = 'resize-r'; 
+                    else prAction = 'move'; 
+                    startX = e.clientX; 
+                    startY = e.clientY; 
+                }
+            }
 
     window.addEventListener('mousemove', (e) => {
         if (!prAction) { 
