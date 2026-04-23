@@ -562,6 +562,7 @@
             <label for="main-instrument" data-lang="inst">Инструмент:</label>
             <select id="main-instrument" class="action-btn">
                 <option value="piano" data-lang="inst_piano">🎹 Пианино (MP3)</option>
+                <option value="flute">💨 Флейта (MP3)</option>
                 <option value="megalovania" data-lang="inst_mega">💀 Megalo (MP3)</option>
                 <option value="sine" data-lang="inst_pure">🎵 Pure Sine</option>
                 <option value="musicbox" data-lang="inst_box">🎵 Music Box (MP3)</option>
@@ -701,6 +702,7 @@
                         
                         <select id="pr-instrument" class="action-btn" style="background: rgba(0,0,0,0.5); margin-left: 5px;">
                             <option value="piano" data-lang="inst_piano">🎹 Пианино (MP3)</option>
+                            <option value="flute">💨 Флейта (MP3)</option>
                             <option value="megalovania" data-lang="inst_mega">💀 Megalo (MP3)</option>
                             <option value="sine" data-lang="inst_pure">🎵 Синус</option>
                             <option value="musicbox" data-lang="inst_box">🎵 Шкатулка (MP3)</option>
@@ -810,50 +812,62 @@ function getContext() {
 }
 
 // --- ЗАГРУЗКА РЕАЛЬНЫХ ЗВУКОВ ---
-// --- ЗАГРУЗКА РЕАЛЬНЫХ ЗВУКОВ ---
-const audioBuffers = { piano: [], musicbox: null, megalovania: null };
+const audioBuffers = { piano: [], flute: [], musicbox: null, megalovania: null };
+let currentLoadedInstrument = null;
 
-async function loadRealSounds() {
-    const otherSounds = {
-        musicbox: 'musicbox.mp3',
-        megalovania: 'megalo.wav'
-    };
+async function loadInstrument(instName) {
+    if (currentLoadedInstrument === instName) return;
 
-    // 1. Загружаем старые звуки (шкатулку и мегало)
-    for (let inst in otherSounds) {
-        try {
-            const response = await fetch(otherSounds[inst] + '?v=' + Date.now());
-            const arrayBuffer = await response.arrayBuffer();
-            audioBuffers[inst] = await audioCtx.decodeAudioData(arrayBuffer);
-        } catch (e) {
-            console.error('Не удалось загрузить', inst);
+    // 1. ОЧИСТКА ПАМЯТИ
+    console.log(`Очищаем память от ${currentLoadedInstrument}...`);
+    audioBuffers.piano = []; 
+    audioBuffers.flute = []; 
+
+    // Загружаем шкатулку и мегалования, если их еще нет (они легкие)
+    if (!audioBuffers.musicbox || !audioBuffers.megalovania) {
+        const otherSounds = { musicbox: 'musicbox.mp3', megalovania: 'megalo.wav' };
+        for (let inst in otherSounds) {
+            try {
+                const response = await fetch(otherSounds[inst]);
+                const arrayBuffer = await response.arrayBuffer();
+                audioBuffers[inst] = await audioCtx.decodeAudioData(arrayBuffer);
+            } catch (e) { }
         }
     }
 
-    // 2. БЫСТРАЯ загрузка 88 нот для пианино
+    // Если выбрали синус, шкатулку или мегалованию - больше ничего не качаем
+    if (instName === 'sine' || instName === 'musicbox' || instName === 'megalovania') {
+        currentLoadedInstrument = instName;
+        return;
+    }
+
+    // 2. ЗАГРУЗКА БОЛЬШИХ ИНСТРУМЕНТОВ (Пианино или Флейта)
+    console.log(`Начинаем загрузку: ${instName}...`);
     const FILE_NOTES = ['A', 'Bb', 'B', 'C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab'];
     let fetchPromises = [];
+
+    // Выбираем правильную папку
+    let folder = instName === 'piano' ? 'Piano sounds' : 'Flute sounds';
 
     for (let i = 0; i < 88; i++) {
         let octave = Math.floor((i + 9) / 12);
         let noteName = FILE_NOTES[i % 12] + octave;
-        
-        // ВАЖНО: Если твоя папка на GitHub называется иначе, поменяй 'Piano sounds/' ниже
-        let fileName = 'Piano sounds/' + noteName + '.mp3';
+        let fileName = `${folder}/${noteName}.mp3`;
 
         let p = fetch(fileName)
             .then(res => res.ok ? res.arrayBuffer() : null)
             .then(buffer => buffer ? audioCtx.decodeAudioData(buffer) : null)
             .then(decoded => {
-                audioBuffers.piano[i] = decoded;
-            }).catch(e => console.error("Ошибка загрузки: " + noteName));
+                if (instName === 'piano') audioBuffers.piano[i] = decoded;
+                if (instName === 'flute') audioBuffers.flute[i] = decoded;
+            }).catch(e => {});
 
         fetchPromises.push(p);
     }
 
-    // Ждем, пока загрузятся все 88 файлов
     await Promise.all(fetchPromises);
-    console.log("Концертный рояль (88 нот) готов к игре!");
+    currentLoadedInstrument = instName;
+    console.log(`${instName} готов к игре!`);
 }
 
 window.setLang = function(lang) { 
@@ -910,6 +924,9 @@ function closeModal(modalId) {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
+    
+    loadInstrument('piano'); // ЭТА СТРОЧКА ЗАПУСТИТ ПИАНИНО ПРИ СТАРТЕ
+
 
     // ТВОЙ НОВЫЙ КОД: Запускаем загрузку звуков!
     loadRealSounds();
@@ -921,10 +938,15 @@ window.addEventListener('DOMContentLoaded', () => {
     const mainInst = document.getElementById('main-instrument'); 
     const prInst = document.getElementById('pr-instrument');
     
-    mainInst.addEventListener('change', () => prInst.value = mainInst.value);
+    mainInst.addEventListener('change', () => {
+        prInst.value = mainInst.value;
+        loadInstrument(mainInst.value); // УМНАЯ ЗАГРУЗКА
+    });
     
     prInst.addEventListener('change', (e) => {
         mainInst.value = prInst.value;
+        loadInstrument(prInst.value); // УМНАЯ ЗАГРУЗКА
+        
         if (selectedNotes.length > 0) { 
             saveHistory(); 
             prNotes.forEach(n => { 
@@ -2060,6 +2082,9 @@ window.addEventListener('DOMContentLoaded', () => {
             if (e.code === 'KeyE') { document.getElementById('tool-draw').click(); return; }
             if (e.code === 'KeyF') { document.getElementById('tool-select').click(); return; }
             if (e.ctrlKey && e.code === 'KeyA') { e.preventDefault(); document.getElementById('btn-sel-all').click(); return; }
+            
+            // ВОТ ТВОЙ ПРОБЕЛ ДЛЯ ПЛЕЕРА:
+            if (e.code === 'Space') { e.preventDefault(); document.getElementById('btn-pr-play').click(); return; }
             
             if ((e.code === 'Backspace' || e.code === 'Delete') && selectedNotes.length > 0) { 
                 e.preventDefault(); 
