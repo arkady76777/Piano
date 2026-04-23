@@ -457,6 +457,7 @@
 #piano { min-width: 100%; transition: width 0.1s ease-out; }
         
     </style>
+    <script src="https://unpkg.com/soundfont-player@0.10.9/dist/soundfont-player.min.js"></script>
 </head>
 <body>
 
@@ -809,31 +810,40 @@ function getContext() {
     return audioCtx;
 }
 
-// --- ЗАГРУЗКА РЕАЛЬНЫХ ЗВУКОВ ---
+// --- ЗАГРУЗКА ЗВУКОВ (СТУДИЙНЫЕ + МЕГАЛОВАНИЯ) ---
 const audioBuffers = {};
+const sfInstruments = {}; // Специальное хранилище для студийных звуков
+let isSfLoaded = false;   // Флажок, чтобы не грузить дважды
 
-async function loadRealSounds() {
-    const sounds = {
-        piano: 'piano.mp3',
-        musicbox: 'musicbox.mp3',
-        megalovania: 'megalo.wav'
-    };
-
-    for (let inst in sounds) {
-        try {
-            // ?v=Date.now() ЗАПРЕЩАЕТ браузеру использовать старые закэшированные файлы!
-            const response = await fetch(sounds[inst] + '?v=' + Date.now());
-            const arrayBuffer = await response.arrayBuffer();
-            audioBuffers[inst] = await audioCtx.decodeAudioData(arrayBuffer);
-            console.log('Успешно загружен скачанный звук:', inst);
-        } catch (e) {
-            console.error('Не удалось загрузить', inst, 'Проверь пути к файлам!');
-        }
+async function loadSounds() {
+    if (isSfLoaded) return;
+    
+    // 1. Оставляем загрузку Мегаловании (это твой личный файл, он нам нужен)
+    try {
+        const response = await fetch('megalo.wav?v=' + Date.now());
+        const arrayBuffer = await response.arrayBuffer();
+        audioBuffers['megalovania'] = await audioCtx.decodeAudioData(arrayBuffer);
+    } catch (e) {
+        console.error('Мегалования не загрузилась');
     }
+
+    // 2. Загружаем СТУДИЙНЫЕ звуки из интернета (Пианино и Шкатулка)
+    console.log("Загружаем студийные звуки. Это может занять пару секунд...");
+    
+    // Мы подключаем звуки напрямую к masterGain, чтобы работал твой ползунок громкости!
+    sfInstruments['piano'] = await Soundfont.instrument(audioCtx, 'acoustic_grand_piano', { destination: masterGain });
+    sfInstruments['musicbox'] = await Soundfont.instrument(audioCtx, 'music_box', { destination: masterGain });
+
+    isSfLoaded = true;
+    console.log("✅ Все звуки (Студия + Мегалования) успешно загружены!");
 }
 
-// Вызываем загрузку звуков моментально при открытии страницы!
-loadRealSounds();
+// ВАЖНО: Браузеры запрещают скачивать музыку до первого клика по экрану.
+// Поэтому мы повесим загрузку на самый первый клик пользователя в любом месте сайта!
+document.body.addEventListener('click', () => {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    loadSounds();
+}, { once: true });
 
 window.setLang = function(lang) { 
     currentLang = lang;
@@ -1958,17 +1968,30 @@ window.addEventListener('DOMContentLoaded', () => {
         
         if (isPress) {
             if (activeNotes[idx]) killPatch(idx);
-            if (idx >= 0 && idx < 88) { 
-                const ctx = getContext(); 
-                let instToUse = noteInst ? noteInst : (isAuto ? prInst.value : mainInst.value); 
-                const patch = createPatch(ctx, PIANO_DATA[idx].f, instToUse); 
-                
-                // Проверяем: файл это или осциллятор
-                if (patch.isSample) patch.source.start();
-                else patch.oscs.forEach(o => o.start());
-                
-                activeNotes[idx] = patch; 
-            }
+            if (idx >= 0 && idx < 88) { 
+                const ctx = getContext(); 
+                let instToUse = noteInst ? noteInst : (isAuto ? prInst.value : mainInst.value); 
+
+                // 1. ЕСЛИ ЭТО ПИАНИНО ИЛИ ШКАТУЛКА (Используем библиотеку Soundfont)
+                if (instToUse === 'piano' || instToUse === 'musicbox') {
+                    if (isSfLoaded && sfInstruments[instToUse]) {
+                        // Библиотеке нужна реальная нота, например "C4". Она у нас есть в PIANO_DATA[idx].n
+                        let noteNode = sfInstruments[instToUse].play(PIANO_DATA[idx].n, ctx.currentTime, {
+                            gain: 1.5 // Делаем звук чуть громче и сочнее
+                        });
+                        // Записываем, что эта нота - студийная
+                        activeNotes[idx] = { isStudio: true, node: noteNode };
+                    }
+                } 
+                // 2. ЕСЛИ ЭТО СИНУС ИЛИ МЕГАЛОВАНИЯ (Используем твой старый код)
+                else {
+                    const patch = createPatch(ctx, PIANO_DATA[idx].f, instToUse); 
+                    if (patch.isSample) patch.source.start();
+                    else patch.oscs.forEach(o => o.start()); 
+                    // Записываем, что эта нота - старая (патч)
+                    activeNotes[idx] = { isStudio: false, patch: patch }; 
+                }
+            }
             sustainedNotes.delete(idx); 
             domElements[idx].classList.add('active'); 
             startVisualBlock(idx, PIANO_DATA[idx]); 
@@ -1982,24 +2005,33 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function killPatch(idx) { 
-        const patch = activeNotes[idx]; 
-        if(!patch) return; 
-        const ctx = getContext(); 
-        const t = ctx.currentTime; 
-        let cg = patch.out.gain.value; 
-        if(cg < 0.001) cg = 0.001; 
-        patch.out.gain.cancelScheduledValues(t); 
-        patch.out.gain.setValueAtTime(cg, t); 
-        patch.out.gain.exponentialRampToValueAtTime(0.001, t + patch.r); 
-        
-        // Правильно останавливаем
-        if (patch.isSample) patch.source.stop(t + patch.r);
-        else patch.oscs.forEach(o => o.stop(t + patch.r));
-        
-        delete activeNotes[idx]; 
-        sustainedNotes.delete(idx); 
-    }
+    function killPatch(idx) { 
+        const activeObj = activeNotes[idx]; 
+        if(!activeObj) return; 
+
+        const ctx = getContext(); 
+        const t = ctx.currentTime; 
+
+        // 1. ЕСЛИ ЗВУК СТУДИЙНЫЙ (Библиотека)
+        if (activeObj.isStudio) {
+            // Библиотека сама умеет делать красивое и естественное затухание струны
+            activeObj.node.stop(t + 0.3); // 0.3 секунды на плавный хвост
+        } 
+        // 2. ЕСЛИ ЗВУК СТАРЫЙ (Твой код для синуса и Мегаловании)
+        else {
+            const patch = activeObj.patch;
+            let cg = patch.out.gain.value; 
+            if(cg < 0.001) cg = 0.001; 
+            patch.out.gain.cancelScheduledValues(t); 
+            patch.out.gain.setValueAtTime(cg, t); 
+            patch.out.gain.exponentialRampToValueAtTime(0.001, t + patch.r); 
+            if (patch.isSample) patch.source.stop(t + patch.r);
+            else patch.oscs.forEach(o => o.stop(t + patch.r));
+        }
+        
+        delete activeNotes[idx]; 
+        sustainedNotes.delete(idx); 
+    }
 
     const activeKeyCodes = {}; 
     
