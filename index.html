@@ -810,30 +810,51 @@ function getContext() {
 }
 
 // --- ЗАГРУЗКА РЕАЛЬНЫХ ЗВУКОВ ---
-const audioBuffers = {};
+// --- ЗАГРУЗКА РЕАЛЬНЫХ ЗВУКОВ ---
+const audioBuffers = { piano: [], musicbox: null, megalovania: null };
 
 async function loadRealSounds() {
-    const sounds = {
-        piano: 'piano.mp3',
+    const otherSounds = {
         musicbox: 'musicbox.mp3',
         megalovania: 'megalo.wav'
     };
 
-    for (let inst in sounds) {
+    // 1. Загружаем старые звуки (шкатулку и мегало)
+    for (let inst in otherSounds) {
         try {
-            // ?v=Date.now() ЗАПРЕЩАЕТ браузеру использовать старые закэшированные файлы!
-            const response = await fetch(sounds[inst] + '?v=' + Date.now());
+            const response = await fetch(otherSounds[inst] + '?v=' + Date.now());
             const arrayBuffer = await response.arrayBuffer();
             audioBuffers[inst] = await audioCtx.decodeAudioData(arrayBuffer);
-            console.log('Успешно загружен скачанный звук:', inst);
         } catch (e) {
-            console.error('Не удалось загрузить', inst, 'Проверь пути к файлам!');
+            console.error('Не удалось загрузить', inst);
         }
     }
-}
 
-// Вызываем загрузку звуков моментально при открытии страницы!
-loadRealSounds();
+    // 2. БЫСТРАЯ загрузка 88 нот для пианино
+    const FILE_NOTES = ['A', 'Bb', 'B', 'C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab'];
+    let fetchPromises = [];
+
+    for (let i = 0; i < 88; i++) {
+        let octave = Math.floor((i + 9) / 12);
+        let noteName = FILE_NOTES[i % 12] + octave;
+        
+        // ВАЖНО: Если твоя папка на GitHub называется иначе, поменяй 'Piano sounds/' ниже
+        let fileName = 'Piano sounds/' + noteName + '.mp3';
+
+        let p = fetch(fileName)
+            .then(res => res.ok ? res.arrayBuffer() : null)
+            .then(buffer => buffer ? audioCtx.decodeAudioData(buffer) : null)
+            .then(decoded => {
+                audioBuffers.piano[i] = decoded;
+            }).catch(e => console.error("Ошибка загрузки: " + noteName));
+
+        fetchPromises.push(p);
+    }
+
+    // Ждем, пока загрузятся все 88 файлов
+    await Promise.all(fetchPromises);
+    console.log("Концертный рояль (88 нот) готов к игре!");
+}
 
 window.setLang = function(lang) { 
     currentLang = lang;
@@ -1923,35 +1944,51 @@ window.addEventListener('DOMContentLoaded', () => {
     const sustainedNotes = new Set(); 
     let isSustainPedalOn = false;
 
-    function createPatch(ctx, freq, type) {
-        const out = ctx.createGain();
-        out.connect(masterGain);
-        const t = ctx.currentTime;
+    function createPatch(ctx, freq, type, noteIdx) {
+    const out = ctx.createGain();
+    out.connect(masterGain);
+    const t = ctx.currentTime;
 
-        // Если это синус ИЛИ файл еще не загрузился - играем обычный звук
-        if (type === 'sine' || !audioBuffers[type]) {
-            let a = 0.02, d = 0.1, s = 0.7, r = 0.2;
-            const osc = ctx.createOscillator();
-            osc.type = type === 'sine' ? 'sine' : 'triangle'; 
-            osc.frequency.setValueAtTime(freq, t);
-            osc.connect(out);
-            out.gain.setValueAtTime(0, t);
-            out.gain.linearRampToValueAtTime(1, t + a);
-            return { oscs: [osc], out, r, s, isSample: false };
-        }
-
-        // --- ИСПОЛЬЗУЕМ РЕАЛЬНЫЙ ФАЙЛ ---
-        const source = ctx.createBufferSource();
-        source.buffer = audioBuffers[type];
-        source.playbackRate.value = freq / 261.63; // Подстройка под ноту До
-        source.connect(out);
-
-        let r = type === 'piano' ? 1.2 : (type === 'musicbox' ? 2.0 : 0.4);
-        out.gain.setValueAtTime(0, t);
-        out.gain.linearRampToValueAtTime(1, t + 0.02);
-
-        return { source, out, r, s: 1, isSample: true };
+    let bufferToPlay = null;
+    
+    // Выбираем правильный файл: если пианино, берем конкретную ноту из массива
+    if (type === 'piano' && audioBuffers.piano[noteIdx]) {
+        bufferToPlay = audioBuffers.piano[noteIdx];
+    } else if (type !== 'piano' && type !== 'sine' && audioBuffers[type]) {
+        bufferToPlay = audioBuffers[type];
     }
+
+    // Если это синус ИЛИ нужный файл не успел загрузиться
+    if (type === 'sine' || !bufferToPlay) {
+        let a = 0.02, d = 0.1, s = 0.7, r = 0.2;
+        const osc = ctx.createOscillator();
+        osc.type = type === 'sine' ? 'sine' : 'triangle'; 
+        osc.frequency.setValueAtTime(freq, t);
+        osc.connect(out);
+        out.gain.setValueAtTime(0, t);
+        out.gain.linearRampToValueAtTime(1, t + a);
+        return { oscs: [osc], out, r, s, isSample: false };
+    }
+
+    // --- ИСПОЛЬЗУЕМ РЕАЛЬНЫЙ ФАЙЛ ---
+    const source = ctx.createBufferSource();
+    source.buffer = bufferToPlay;
+
+    // Секрет идеального звука: не искажать частоту для пианино!
+    if (type === 'piano') {
+        source.playbackRate.value = 1; 
+    } else {
+        source.playbackRate.value = freq / 261.63; // Для шкатулки оставляем растягивание
+    }
+
+    source.connect(out);
+
+    let r = type === 'piano' ? 1.5 : (type === 'musicbox' ? 2.0 : 0.4); // Пианино теперь затухает красивее
+    out.gain.setValueAtTime(0, t);
+    out.gain.linearRampToValueAtTime(1, t + 0.02);
+
+    return { source, out, r, s: 1, isSample: true };
+}
 
     function handleKeyAction(idx, isPress, isAuto = false, noteInst = null) {
         if (!isPianoActive && !isAuto) return; 
@@ -1961,7 +1998,7 @@ window.addEventListener('DOMContentLoaded', () => {
             if (idx >= 0 && idx < 88) { 
                 const ctx = getContext(); 
                 let instToUse = noteInst ? noteInst : (isAuto ? prInst.value : mainInst.value); 
-                const patch = createPatch(ctx, PIANO_DATA[idx].f, instToUse); 
+                const patch = createPatch(ctx, PIANO_DATA[idx].f, instToUse, idx);
                 
                 // Проверяем: файл это или осциллятор
                 if (patch.isSample) patch.source.start();
