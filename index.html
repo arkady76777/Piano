@@ -2645,8 +2645,6 @@ window.addEventListener('DOMContentLoaded', () => {
     
     renderVis();
     setLang('tr');
-    }
-});
 
 document.getElementById('btn-login').addEventListener('click', async () => {
     try {
@@ -2697,11 +2695,13 @@ document.getElementById('avatar-input').addEventListener('change', (e) => {
             } catch (err) {
                 console.error(err); alert("Ошибка сохранения!");
             }
-        };
-        img.src = event.target.result;
-    };
-    reader.readAsDataURL(file);
-});
+        }; // Закрыли img.onload
+
+        img.src = event.target.result; // <-- ДОБАВЛЕНО: передаем файл в картинку
+    }; // Закрыли reader.onload
+
+    reader.readAsDataURL(file); // <-- ДОБАВЛЕНО: запускаем процесс чтения файла
+}); // Закрыли addEventListener
 
 // --- ЛОГИКА МАСШТАБА ПИАНИНО ---
 document.addEventListener('DOMContentLoaded', () => {
