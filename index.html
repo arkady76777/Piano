@@ -1932,20 +1932,30 @@ window.addEventListener('DOMContentLoaded', () => {
         out.connect(masterGain);
         const t = ctx.currentTime;
 
-        // Если это синус ИЛИ реальный файл еще не загрузился - играем математический звук
+        // Если это синус ИЛИ файл еще не загрузился - играем обычный звук
         if (type === 'sine' || !audioBuffers[type]) {
-            let a = 0.05, d = 0.1, s = 0.8, r = 0.3;
+            let a = 0.02, d = 0.1, s = 0.7, r = 0.2;
             const osc = ctx.createOscillator();
             osc.type = type === 'sine' ? 'sine' : 'triangle'; 
             osc.frequency.setValueAtTime(freq, t);
             osc.connect(out);
-
             out.gain.setValueAtTime(0, t);
             out.gain.linearRampToValueAtTime(1, t + a);
-            out.gain.exponentialRampToValueAtTime(0.001, t + a + d);
-
             return { oscs: [osc], out, r, s, isSample: false };
         }
+
+        // --- ИСПОЛЬЗУЕМ РЕАЛЬНЫЙ ФАЙЛ ---
+        const source = ctx.createBufferSource();
+        source.buffer = audioBuffers[type];
+        source.playbackRate.value = freq / 261.63; // Подстройка под ноту До
+        source.connect(out);
+
+        let r = type === 'piano' ? 0.8 : (type === 'musicbox' ? 2.0 : 0.4);
+        out.gain.setValueAtTime(0, t);
+        out.gain.linearRampToValueAtTime(1, t + 0.01);
+
+        return { source, out, r, s: 1, isSample: true };
+    }}
 
         // --- МАГИЯ РЕАЛЬНЫХ СЭМПЛОВ ---
         const source = ctx.createBufferSource();
@@ -1969,26 +1979,17 @@ window.addEventListener('DOMContentLoaded', () => {
                 const ctx = getContext(); 
                 let instToUse = noteInst ? noteInst : (isAuto ? prInst.value : mainInst.value); 
                 const patch = createPatch(ctx, PIANO_DATA[idx].f, instToUse); 
+                
+                // Проверяем: файл это или осциллятор
                 if (patch.isSample) patch.source.start();
                 else patch.oscs.forEach(o => o.start());
+                
                 activeNotes[idx] = patch; 
             }
             sustainedNotes.delete(idx); 
             domElements[idx].classList.add('active'); 
             startVisualBlock(idx, PIANO_DATA[idx]); 
             createSparks(PIANO_DATA[idx]);
-            
-            if (isRecording && !isAuto && idx >= 0 && idx < 88) { 
-                let now = Date.now(); 
-                let noteStr = PIANO_DATA[idx].n; 
-                if (now - lastRecTime < 60 && recText.value.length > 0 && !recText.value.endsWith('- ')) { 
-                    recText.value = recText.value.replace(/\](\*2)? $/, '+' + noteStr + ']$1 '); 
-                } else { 
-                    recText.value += `[${noteStr}] `; 
-                } 
-                lastRecTime = now; 
-                recText.scrollTop = recText.scrollHeight; 
-            }
         } else {
             if (!activeNotes[idx] && !isAuto) return; 
             domElements[idx].classList.remove('active'); 
@@ -2008,11 +2009,11 @@ window.addEventListener('DOMContentLoaded', () => {
         patch.out.gain.cancelScheduledValues(t); 
         patch.out.gain.setValueAtTime(cg, t); 
         patch.out.gain.exponentialRampToValueAtTime(0.001, t + patch.r); 
-        if (patch.isSample) {
-            patch.source.stop(t + patch.r);
-        } else {
-            patch.oscs.forEach(o => o.stop(t + patch.r));
-        }
+        
+        // Правильно останавливаем
+        if (patch.isSample) patch.source.stop(t + patch.r);
+        else patch.oscs.forEach(o => o.stop(t + patch.r));
+        
         delete activeNotes[idx]; 
         sustainedNotes.delete(idx); 
     }
@@ -2346,7 +2347,29 @@ window.addEventListener('DOMContentLoaded', () => {
             if (currentPrTool === 'draw') {
                 if (!noteEl) { 
                     if (e.target.id === 'pr-grid') { 
+  if (currentPrTool === 'draw') {
+                if (!noteEl) { 
+                    if (e.target.id === 'pr-grid') { 
                         selectedNotes = []; updateAllPRNotes();
+                        saveHistory(); 
+                        let col = Math.floor(e.offsetX / snapPx) * (4 / gridSnapDivs); 
+                        let row = Math.floor(e.offsetY / prZoomH); 
+                        if (row >= 0 && row <= 87) { 
+                            let newNote = { id: Date.now() + Math.random(), p: 87 - row, c: col, d: currentNoteLength, i: prInst.value }; 
+                            prNotes.push(newNote); renderPRNote(newNote); 
+                            actionNote = newNote; originalNote = { ...newNote }; 
+                            originalSelectedNotes = [{...newNote}]; 
+                            actionNote.hasMoved = true; hasUnsavedChanges = true; 
+                            prAction = 'move'; startX = e.clientX; startY = e.clientY; 
+                            
+                            // --- ВОТ ЭТОТ КУСОК ИСПРАВЛЕН ---
+                            handleKeyAction(newNote.p, true, true, newNote.i); 
+                            setTimeout(() => handleKeyAction(newNote.p, false, true, newNote.i), 200);
+                            // -------------------------------
+                        } 
+                    } 
+                } else {
+                    // ... (остальной код в else оставляй как есть)                      selectedNotes = []; updateAllPRNotes();
                         saveHistory(); 
                         let col = Math.floor(e.offsetX / snapPx) * (4 / gridSnapDivs); 
                         let row = Math.floor(e.offsetY / prZoomH); 
