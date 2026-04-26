@@ -1130,7 +1130,70 @@ Public License instead of this License.  But first, please read
 }
 #studio-container { overflow-x: auto; overflow-y: hidden; }
 #piano { min-width: 100%; transition: width 0.1s ease-out; }
-        
+        /* Главная обертка теперь управляет колонками */
+#workspace-wrapper {
+    position: absolute;
+    top: 85px; /* Высота верхней панели */
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    display: flex; /* ВКЛЮЧАЕМ ФЛЕКСБОКС */
+    overflow: hidden;
+    z-index: 100;
+}
+
+/* Левая панель (синяя на твоем плане) */
+#sidebar {
+    position: static; /* Убираем абсолютное позиционирование */
+    width: 70px;
+    height: 100%;
+    background: rgba(10, 15, 30, 0.95);
+    border-right: 2px solid var(--theme-color);
+    flex-shrink: 0; /* Чтобы не сжимался */
+}
+
+/* Центральная часть (бежевая на твоем плане) */
+#main-section {
+    flex: 1; /* ЗАНИМАЕТ ВСЁ СВОБОДНОЕ МЕСТО */
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Чат (правая синяя панель) */
+#chat-panel {
+    position: static; /* Теперь он часть потока */
+    width: 0; /* Изначально закрыт */
+    height: 100%;
+    background: rgba(10, 15, 30, 0.95);
+    border-left: 0px solid #ff0055;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-left 0.1s;
+    overflow: hidden; /* Чтобы текст не вылезал, пока чат закрыт */
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+/* Когда чат активен */
+#chat-panel.open {
+    width: 320px;
+    border-left: 2px solid #ff0055;
+}
+
+/* Визуализатор и Пианино теперь внутри центральной части */
+#studio-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+#piano {
+    width: 100%; /* Пианино всегда занимает ширину центральной секции */
+    position: relative; /* Чтобы не улетало вниз */
+}
     </style>
 </head>
 <body>
@@ -1272,27 +1335,28 @@ Public License instead of this License.  But first, please read
     <div id="sustain-indicator" data-lang="sustain_on">❇ SUSTAIN PEDAL ON ❇</div>
     
     <div id="workspace-wrapper">
-        <div id="chat-panel" class="floating-panel" style="left: 85px; top: 95px; width: 320px; height: calc(100vh - 120px); flex-direction: column; padding: 15px; border: 2px solid #ff0055; box-shadow: 0 0 30px rgba(255,0,85,0.2); z-index: 140;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <h4 style="color: #ff0055; margin: 0; font-weight: 900; letter-spacing: 1px;">ONLINE CHAT</h4>
-            <button id="btn-close-chat" style="background:transparent; border:none; color:#fff; cursor:pointer; font-size:16px;">✖</button>
-        </div>
-        
-        <div id="chat-messages" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; padding-right: 5px; scroll-behavior: smooth;">
-            <div style="color: #aaa; text-align: center; font-size: 12px; margin-top: 50%;">Подключение к чату...</div>
-        </div>
-        
-        <div style="display: flex; gap: 5px;">
-            <input type="text" id="chat-input" placeholder="Написать..." style="flex: 1; background: rgba(0,0,0,0.6); color: #fff; border: 1px solid rgba(255,0,85,0.5); border-radius: 6px; padding: 10px; outline: none; transition: 0.3s;">
-            <button id="btn-send-chat" class="action-btn" style="border-color: #ff0055; color: #ff0055; font-size: 16px; padding: 8px 15px;">➤</button>
+    <div id="sidebar">
+        <div id="side-home" class="sidebar-btn active">...</div>
+        <div id="side-chat" class="sidebar-btn" style="border-color: #ff0055; color: #ff0055;">
+             <svg class="svg-icon" viewBox="0 0 24 24">...</svg>
         </div>
     </div>
-        <div id="studio-container" class="fade-in">
-            <div class="premium-bg">
-                <div class="premium-blob pb-1"></div>
-                <div class="premium-blob pb-2"></div>
-                <div class="premium-blob pb-3"></div>
-            </div>
+
+    <div id="main-section">
+        <div id="studio-container">
+            <canvas id="visualizer"></canvas>
+            <div id="piano"></div>
+        </div>
+        <div id="library-container">...</div>
+        <div id="account-container">...</div>
+    </div>
+
+    <div id="chat-panel">
+        <div class="chat-header">...</div>
+        <div id="chat-messages">...</div>
+        <div class="chat-footer">...</div>
+    </div>
+</div>
             
             <div id="metronome-panel" class="floating-panel">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -1643,20 +1707,14 @@ window.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     const sideChatBtn = document.getElementById('side-chat');
     const chatPanel = document.getElementById('chat-panel');
-    const chatInput = document.getElementById('chat-input');
-    const btnSendChat = document.getElementById('btn-send-chat');
-    const chatMessages = document.getElementById('chat-messages');
 
-    // Открытие/закрытие чата
     sideChatBtn.addEventListener('click', () => {
-        const isShowing = chatPanel.style.display === 'flex';
-        chatPanel.style.display = isShowing ? 'none' : 'flex';
-        if (!isShowing) {
-            sideChatBtn.classList.add('active');
-            chatMessages.scrollTop = chatMessages.scrollHeight; // Крутим вниз при открытии
-        } else {
-            sideChatBtn.classList.remove('active');
-        }
+        chatPanel.classList.toggle('open'); // Плавно открываем/закрываем
+        
+        // Когда чат открывается, нам нужно обновить размер холста визуализатора
+        setTimeout(() => {
+            if (window.resizeVis) window.resizeVis(); 
+        }, 300); // Ждем окончания анимации (0.3s)
     });
 
     document.getElementById('btn-close-chat').addEventListener('click', () => {
