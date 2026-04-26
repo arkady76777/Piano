@@ -577,6 +577,14 @@
     </div>
 
     <div id="sidebar">
+        <div id="side-chat" class="sidebar-btn" data-lang-title="side_chat" style="margin-bottom: 20px; border-color: #ff0055; color: #ff0055;">
+            <svg class="svg-icon" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+        </div>
         <div id="side-home" class="sidebar-btn active" data-lang-title="side_home"><svg class="svg-icon" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18v12H3z"></path><path d="M8 6v8"></path><path d="M12 6v8"></path><path d="M16 6v8"></path></svg></div>
         <div id="side-lib" class="sidebar-btn" data-lang-title="side_lib"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg></div>
         <div id="side-create" class="sidebar-btn" data-lang-title="side_create"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
@@ -589,6 +597,21 @@
     <div id="sustain-indicator" data-lang="sustain_on">❇ SUSTAIN PEDAL ON ❇</div>
     
     <div id="workspace-wrapper">
+        <div id="chat-panel" class="floating-panel" style="left: 85px; top: 95px; width: 320px; height: calc(100vh - 120px); flex-direction: column; padding: 15px; border: 2px solid #ff0055; box-shadow: 0 0 30px rgba(255,0,85,0.2); z-index: 140;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h4 style="color: #ff0055; margin: 0; font-weight: 900; letter-spacing: 1px;">ONLINE CHAT</h4>
+            <button id="btn-close-chat" style="background:transparent; border:none; color:#fff; cursor:pointer; font-size:16px;">✖</button>
+        </div>
+        
+        <div id="chat-messages" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; padding-right: 5px; scroll-behavior: smooth;">
+            <div style="color: #aaa; text-align: center; font-size: 12px; margin-top: 50%;">Подключение к чату...</div>
+        </div>
+        
+        <div style="display: flex; gap: 5px;">
+            <input type="text" id="chat-input" placeholder="Написать..." style="flex: 1; background: rgba(0,0,0,0.6); color: #fff; border: 1px solid rgba(255,0,85,0.5); border-radius: 6px; padding: 10px; outline: none; transition: 0.3s;">
+            <button id="btn-send-chat" class="action-btn" style="border-color: #ff0055; color: #ff0055; font-size: 16px; padding: 8px 15px;">➤</button>
+        </div>
+    </div>
         <div id="studio-container" class="fade-in">
             <div class="premium-bg">
                 <div class="premium-blob pb-1"></div>
@@ -940,6 +963,113 @@ window.addEventListener('DOMContentLoaded', () => {
         prInst.value = mainInst.value;
         loadInstrument(mainInst.value); // УМНАЯ ЗАГРУЗКА
     });
+    // ==========================================
+    // СИСТЕМА ОНЛАЙН ЧАТА
+    // ==========================================
+    const sideChatBtn = document.getElementById('side-chat');
+    const chatPanel = document.getElementById('chat-panel');
+    const chatInput = document.getElementById('chat-input');
+    const btnSendChat = document.getElementById('btn-send-chat');
+    const chatMessages = document.getElementById('chat-messages');
+
+    // Открытие/закрытие чата
+    sideChatBtn.addEventListener('click', () => {
+        const isShowing = chatPanel.style.display === 'flex';
+        chatPanel.style.display = isShowing ? 'none' : 'flex';
+        if (!isShowing) {
+            sideChatBtn.classList.add('active');
+            chatMessages.scrollTop = chatMessages.scrollHeight; // Крутим вниз при открытии
+        } else {
+            sideChatBtn.classList.remove('active');
+        }
+    });
+
+    document.getElementById('btn-close-chat').addEventListener('click', () => {
+        chatPanel.style.display = 'none';
+        sideChatBtn.classList.remove('active');
+    });
+
+    // Отправка сообщений
+    async function sendChatMessage() {
+        const text = chatInput.value.trim();
+        if (!text) return;
+        
+        if (!window.auth || !window.auth.currentUser) {
+            alert("Тебе нужно войти в аккаунт (синяя кнопка в профиле), чтобы писать в чат!");
+            return;
+        }
+
+        // Запрещаем плохие слова
+        let cleanText = text.toLowerCase();
+        if (badWords.some(bw => cleanText.includes(bw))) {
+            chatInput.value = "***";
+            return;
+        }
+
+        const authorName = document.getElementById('acc-nickname').value || "Guest";
+        const authorColor = document.getElementById('acc-color').value || "#ffffff";
+        
+        chatInput.value = ''; // Очищаем поле сразу
+
+        try {
+            await window.fb.addDoc(window.fb.collection(window.db, "global_chat"), {
+                text: text,
+                author: authorName,
+                color: authorColor,
+                timestamp: window.fb.serverTimestamp() // Ставим точное время сервера
+            });
+        } catch(err) {
+            console.error("Ошибка отправки чата:", err);
+            alert("Не удалось отправить сообщение.");
+        }
+    }
+
+    btnSendChat.addEventListener('click', sendChatMessage);
+    chatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendChatMessage();
+    });
+
+    // Подсветка инпута при фокусе
+    chatInput.addEventListener('focus', () => chatInput.style.borderColor = '#ff0055');
+    chatInput.addEventListener('blur', () => chatInput.style.borderColor = 'rgba(255,0,85,0.5)');
+
+    // Слушаем базу данных (только последние 30 сообщений)
+    setTimeout(() => {
+        if(window.fb && window.fb.onSnapshot) {
+            const chatQuery = window.fb.query(
+                window.fb.collection(window.db, "global_chat"),
+                window.fb.orderBy("timestamp", "desc"),
+                window.fb.limit(30) // ОГРАНИЧЕНИЕ: ТОЛЬКО 30 ШТУК!
+            );
+
+            window.fb.onSnapshot(chatQuery, (snapshot) => {
+                let msgs = [];
+                snapshot.forEach(doc => msgs.push(doc.data()));
+                msgs.reverse(); // Переворачиваем, чтобы новые были внизу
+                
+                chatMessages.innerHTML = '';
+                if (msgs.length === 0) {
+                    chatMessages.innerHTML = '<div style="color: #aaa; text-align: center; font-size: 13px; margin-top: 50%;">Чат пуст. Напиши первым!</div>';
+                }
+
+                msgs.forEach(m => {
+                    let msgDiv = document.createElement('div');
+                    msgDiv.style.background = 'rgba(255,255,255,0.05)';
+                    msgDiv.style.padding = '8px 10px';
+                    msgDiv.style.borderRadius = '8px';
+                    msgDiv.style.fontSize = '14px';
+                    msgDiv.style.wordBreak = 'break-word';
+                    msgDiv.style.borderLeft = `3px solid ${m.color}`;
+                    
+                    msgDiv.innerHTML = `<b style="color:${m.color}; font-size: 12px; display: block; margin-bottom: 2px;">${m.author}</b> <span style="color:#eee;">${m.text}</span>`;
+                    chatMessages.appendChild(msgDiv);
+                });
+                
+                // Автоматически крутим чат в самый низ при новом сообщении
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            });
+        }
+    }, 2000); // Даем 2 секунды на загрузку Firebase
     
     prInst.addEventListener('change', (e) => {
         mainInst.value = prInst.value;
@@ -2784,7 +2914,8 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, setDoc, getDoc, onSnapshot, query, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   // Добавили инструменты для входа
   import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
@@ -2803,7 +2934,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.provider = new GoogleAuthProvider();
   
   // Отправляем функции наружу, чтобы кнопки могли их использовать
-  window.fb = { collection, addDoc, getDocs, deleteDoc, doc, setDoc, getDoc, signInWithPopup, signOut, provider };
+  window.fb = { collection, addDoc, getDocs, deleteDoc, doc, setDoc, getDoc, signInWithPopup, signOut, provider, onSnapshot, query, orderBy, limit, serverTimestamp };
 
   // Эта штука постоянно следит, вошел ты или нет
   onAuthStateChanged(window.auth, (user) => {
