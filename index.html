@@ -2059,10 +2059,13 @@ const chatMessages = document.getElementById('chat-messages');
     }
     
     // --- ГЕНЕРАЦИЯ ДАННЫХ 88 НОТ ---
-    const KEYMAP_LOWER_WHITE = [{c:'KeyZ',l:'Z'},{c:'KeyX',l:'X'},{c:'KeyC',l:'C'},{c:'KeyV',l:'V'},{c:'KeyB',l:'B'},{c:'KeyN',l:'N'},{c:'KeyM',l:'M'},{c:'Comma',l:','},{c:'Period',l:'.'},{c:'Slash',l:'/'}];
-    const KEYMAP_LOWER_BLACK = [{c:'KeyS',l:'S'},{c:'KeyD',l:'D'},{c:'KeyG',l:'G'},{c:'KeyH',l:'H'},{c:'KeyJ',l:'J'},{c:'KeyL',l:'L'},{c:'Semicolon',l:';'}];
-    const KEYMAP_UPPER_WHITE = [{c:'KeyQ',l:'Q'},{c:'KeyW',l:'W'},{c:'KeyE',l:'E'},{c:'KeyR',l:'R'},{c:'KeyT',l:'T'},{c:'KeyY',l:'Y'},{c:'KeyU',l:'U'},{c:'KeyI',l:'I'},{c:'KeyO',l:'O'},{c:'KeyP',l:'P'},{c:'BracketLeft',l:'['},{c:'BracketRight',l:']'}];
-    const KEYMAP_UPPER_BLACK = [{c:'Digit2',l:'2'},{c:'Digit3',l:'3'},{c:'Digit5',l:'5'},{c:'Digit6',l:'6'},{c:'Digit7',l:'7'},{c:'Digit9',l:'9'},{c:'Digit0',l:'0'},{c:'Equal',l:'='}];
+    // Поменяли местами: теперь QWERTY играет нижнюю октаву
+    const KEYMAP_LOWER_WHITE = [{c:'KeyQ',l:'Q'},{c:'KeyW',l:'W'},{c:'KeyE',l:'E'},{c:'KeyR',l:'R'},{c:'KeyT',l:'T'},{c:'KeyY',l:'Y'},{c:'KeyU',l:'U'},{c:'KeyI',l:'I'},{c:'KeyO',l:'O'},{c:'KeyP',l:'P'},{c:'BracketLeft',l:'['},{c:'BracketRight',l:']'}];
+    const KEYMAP_LOWER_BLACK = [{c:'Digit2',l:'2'},{c:'Digit3',l:'3'},{c:'Digit5',l:'5'},{c:'Digit6',l:'6'},{c:'Digit7',l:'7'},{c:'Digit9',l:'9'},{c:'Digit0',l:'0'},{c:'Equal',l:'='}];
+    
+    // А ZXCV теперь играет верхнюю октаву
+    const KEYMAP_UPPER_WHITE = [{c:'KeyZ',l:'Z'},{c:'KeyX',l:'X'},{c:'KeyC',l:'C'},{c:'KeyV',l:'V'},{c:'KeyB',l:'B'},{c:'KeyN',l:'N'},{c:'KeyM',l:'M'},{c:'Comma',l:','},{c:'Period',l:'.'},{c:'Slash',l:'/'}];
+    const KEYMAP_UPPER_BLACK = [{c:'KeyS',l:'S'},{c:'KeyD',l:'D'},{c:'KeyG',l:'G'},{c:'KeyH',l:'H'},{c:'KeyJ',l:'J'},{c:'KeyL',l:'L'},{c:'Semicolon',l:';'}];
 
     const NOTES_LIST = ['A','A#','B','C','C#','D','D#','E','F','F#','G','G#']; 
     const PIANO_DATA = []; 
@@ -2354,6 +2357,53 @@ const chatMessages = document.getElementById('chat-messages');
             delete activeKeyCodes[e.code]; 
         } 
     });
+    // --- ПОДКЛЮЧЕНИЕ РЕАЛЬНОЙ MIDI КЛАВИАТУРЫ ---
+    if (navigator.requestMIDIAccess) {
+        navigator.requestMIDIAccess().then(midiAccess => {
+            console.log("MIDI интерфейс готов! 🚀");
+            
+            function getMIDIMessage(message) {
+                const command = message.data[0] >> 4;
+                const note = message.data[1];
+                const velocity = message.data.length > 2 ? message.data[2] : 0;
+                
+                // Проверяем педаль сустейна (Control Change 64)
+                if (command === 11 && note === 64) {
+                    isSustainPedalOn = velocity >= 64;
+                    document.getElementById('sustain-indicator').style.display = isSustainPedalOn ? 'block' : 'none';
+                    if (!isSustainPedalOn) sustainedNotes.forEach(idx => killPatch(idx));
+                    return;
+                }
+                
+                // Переводим MIDI-ноту (начинается с 21 = A0) в наш индекс (0-87)
+                const pianoIdx = note - 21;
+                
+                if (pianoIdx >= 0 && pianoIdx < 88) {
+                    // Команда 9 - нажатие, 8 - отпускание. (Иногда нажатие с velocity 0 = отпускание)
+                    if (command === 9 && velocity > 0) {
+                        handleKeyAction(pianoIdx, true, false);
+                    } else if (command === 8 || (command === 9 && velocity === 0)) {
+                        handleKeyAction(pianoIdx, false, false);
+                    }
+                }
+            }
+
+            // Подключаемся ко всем доступным MIDI-устройствам
+            for (let input of midiAccess.inputs.values()) {
+                input.onmidimessage = getMIDIMessage;
+            }
+            
+            // Если устройство подключат уже после загрузки страницы
+            midiAccess.onstatechange = (e) => {
+                if (e.port.state === 'connected') {
+                    e.port.onmidimessage = getMIDIMessage;
+                    console.log("Подключено MIDI-устройство:", e.port.name);
+                }
+            };
+        }, () => {
+            console.log("Доступ к MIDI устройствам отклонен браузером.");
+        });
+    }
 
     window.addEventListener('paste', (e) => {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || createCont.style.display !== 'flex') return;
@@ -2815,19 +2865,27 @@ const chatMessages = document.getElementById('chat-messages');
     const c2d = canvas.getContext('2d'); 
     let cHeight;
     
-    function resizeVis() { 
+    window.resizeVis = function() { 
         const pianoEl = document.getElementById('piano');
+        if (!pianoEl) return;
         const pianoH = pianoEl.clientHeight; 
         cHeight = canvas.parentElement.clientHeight - pianoH; 
-        // ВАЖНО: берем ширину не от экрана, а от самого элемента пианино!
+        
         canvas.width = pianoEl.clientWidth; 
+        canvas.style.width = pianoEl.clientWidth + 'px'; // Железно привязываем ширину CSS
         canvas.height = cHeight; 
     } 
-    window.addEventListener('resize', resizeVis); resizeVis();
-    
-    // Вызываем перерасчет при дергании зума
-    document.getElementById('zoom-slider').addEventListener('input', () => {
-        setTimeout(resizeVis, 50); // Ждем миллисекунду, пока пианино растянется
+    window.addEventListener('resize', window.resizeVis); 
+    window.resizeVis();
+
+    // Умный наблюдатель: следит за контейнером и перерисовывает холст каждый кадр анимации чата!
+    new ResizeObserver(() => {
+        if(window.resizeVis) window.resizeVis();
+    }).observe(document.getElementById('workspace-wrapper'));
+
+    document.getElementById('zoom-slider').addEventListener('input', (e) => {
+        document.getElementById('piano').style.width = e.target.value + '%';
+        if(window.resizeVis) window.resizeVis();
     });
     
     let vBlocks = [], aBlocks = {}, sparks = [];
