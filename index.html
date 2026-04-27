@@ -711,8 +711,13 @@
         <div id="glitch-text"></div>
     </div>
 
+    <div id="cow-screen" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 10005; justify-content: center; align-items: center; flex-direction: column;">
+        <h2 id="cow-timer" style="color: white; font-family: monospace; font-size: 24px; margin-bottom: 20px;">30 seconds remain</h2>
+        <img src="https://media.tenor.com/8QzX9F0wU2oAAAAi/polish-cow.gif" style="max-width: 80%; max-height: 70vh; border-radius: 20px;">
+        <h1 style="color: #ffcc00; font-family: 'Comic Sans MS', cursive; margin-top: 20px; animation: pulseMetro 0.5s infinite alternate; text-align: center;">TYLKO JEDNO W GŁOWIE MAM...</h1>
+    </div>
+
     <div id="main-section"> <div id="studio-container"> <div id="sustain-indicator" data-lang="sustain_on">❇ SUSTAIN PEDAL ON ❇</div>
-    
             
             <div id="metronome-panel" class="floating-panel">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -1802,6 +1807,38 @@ const chatMessages = document.getElementById('chat-messages');
             setTimeout(() => e.target.style.color = "#fff", 500); 
         } else if (val === 'sans') { 
             playMegalovaniaIntro(); 
+        } else if (val === 'holy cow') {
+            // ПАСХАЛКА: ПОЛЬСКАЯ КОРОВА (С прямыми ссылками и таймером)
+            const cowScreen = document.getElementById('cow-screen');
+            const cowTimer = document.getElementById('cow-timer');
+            cowScreen.style.display = 'flex';
+            
+            // Прямая ссылка на звук (работает без скачивания!)
+            let cowAudio = new Audio('https://www.myinstants.com/media/sounds/tylko-jedno-w-glowie-mam.mp3');
+            cowAudio.volume = 0.8;
+            cowAudio.play();
+            
+            // Сбрасываем имя
+            e.target.value = "Guest"; 
+            
+            // Логика таймера на 30 секунд
+            let timeLeft = 30;
+            cowTimer.innerText = timeLeft + " seconds remain";
+            
+            let cowInterval = setInterval(() => {
+                timeLeft--;
+                cowTimer.innerText = timeLeft + " seconds remain";
+                if (timeLeft <= 0) clearInterval(cowInterval);
+            }, 1000); // Обновляется каждую 1000 миллисекунд (1 секунду)
+            
+            // Выключаем всё ровно через 30 секунд
+            setTimeout(() => {
+                clearInterval(cowInterval);
+                cowScreen.style.display = 'none';
+                cowAudio.pause();
+                cowAudio.currentTime = 0; 
+            }, 30000); 
+            
         } else if (val === 'gaster' || val === 'admin' || (val === 'owner' && !window.isOwner)) {
             // Если ты Владелец, то логика выше проигнорирует 'owner' и даст тебе это имя!
             
