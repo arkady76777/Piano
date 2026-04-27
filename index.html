@@ -2914,7 +2914,7 @@ const chatMessages = document.getElementById('chat-messages');
         c2d.clearRect(0, 0, canvas.width, cHeight);
         for (let k in aBlocks) { 
             let b = aBlocks[k]; 
-            b.h += 6; // ЗАМЕДЛИЛИ РОСТ СЛЕДА (было 15)
+            b.h += 4; // ЗАМЕДЛИЛИ РОСТ СЛЕДА (было 15)
             c2d.fillStyle = b.c; 
             c2d.shadowBlur = 15; 
             c2d.shadowColor = b.c; 
@@ -2922,12 +2922,12 @@ const chatMessages = document.getElementById('chat-messages');
         }
         for (let i = vBlocks.length - 1; i >= 0; i--) { 
             let b = vBlocks[i]; 
-            b.y -= 6; // ЗАМЕДЛИЛИ ПОЛЕТ СЛЕДА (было 15)
+            b.y -= 4; // ЗАМЕДЛИЛИ ПОЛЕТ СЛЕДА (было 15)
             c2d.fillStyle = b.c;
             c2d.shadowBlur = 15; 
             c2d.shadowColor = b.c; 
             c2d.fillRect(b.x, b.y - b.h, b.w, b.h); 
-            if (b.y - b.h < 0) vBlocks.splice(i, 1); 
+            if (b.y < 0) vBlocks.splice(i, 1);
         }
         c2d.shadowBlur = 5;
         for (let i = sparks.length - 1; i >= 0; i--) { 
@@ -2942,6 +2942,11 @@ const chatMessages = document.getElementById('chat-messages');
         c2d.globalAlpha = 1; c2d.shadowBlur = 0; 
         requestAnimationFrame(renderVis);
     }
+    // ПРИНУДИТЕЛЬНОЕ ВЫРАВНИВАНИЕ ВИЗУАЛИЗАТОРА ПРИ СТАРТЕ
+    setTimeout(() => {
+        if (window.resizeVis) window.resizeVis();
+    }, 150);
+    
     renderVis();
     setLang('ru'); 
     switchView('home'); 
