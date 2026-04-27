@@ -990,6 +990,7 @@ function closeModal(modalId) {
 window.addEventListener('DOMContentLoaded', () => {
     
     loadInstrument('piano'); // ЭТА СТРОЧКА ЗАПУСТИТ ПИАНИНО ПРИ СТАРТЕ
+    switchView('home'); // ВОТ ЭТО ВКЛЮЧИТ СТУДИЮ И ПИАНИНО СРАЗУ ПРИ ЗАГРУЗКЕ!
 
 
 
@@ -1172,8 +1173,8 @@ const chatMessages = document.getElementById('chat-messages');
     function switchView(viewName) {
         hideAll();
         if (viewName === 'home') {
-            studioCont.style.display = 'block'; 
-            studioCont.classList.add('fade-in'); 
+            studioCont.style.display = 'flex'; 
+            studioCont.classList.add('fade-in');
             sideHome.classList.add('active');
             document.querySelectorAll('.hide-on-view').forEach(el => el.style.display = ''); 
             isPianoActive = true;
@@ -2882,60 +2883,7 @@ const chatMessages = document.getElementById('chat-messages');
     setLang('tr');
 });
 
-document.getElementById('btn-login').addEventListener('click', async () => {
-    try {
-        // Вызываем всплывающее окно Google
-        await window.fb.signInWithPopup(window.auth, window.fb.provider);
-    } catch (error) {
-        console.error("Ошибка входа:", error);
-        alert("Не удалось войти! Посмотри консоль.");
-    }
-});
-
-document.getElementById('btn-logout').addEventListener('click', async () => {
-    // Выходим из аккаунта
-    await window.auth.signOut();
-    location.reload(); // Перезагружаем страницу, чтобы очистить данные
-});
-
-document.getElementById('btn-change-photo').addEventListener('click', () => {
-    document.getElementById('avatar-input').click();
-});
-
-document.getElementById('avatar-input').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file || !window.auth.currentUser) return;
-
-    const reader = new FileReader();
-    reader.onload = function(event) {
-        const img = new Image();
-        img.onload = async function() {
-            // Сжимаем картинку, чтобы обмануть гугл
-            const canvas = document.createElement('canvas');
-            const maxSize = 150;
-            canvas.width = maxSize; canvas.height = maxSize;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, maxSize, maxSize);
-            
-            // Превращаем в текст
-            const base64Avatar = canvas.toDataURL('image/jpeg', 0.8);
-            
-            // Показываем на экране
-            document.querySelector('.acc-avatar').innerHTML = `<img src="${base64Avatar}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
-            
-            // Сохраняем в БД!
-            const userRef = window.fb.doc(window.db, "users", window.auth.currentUser.uid);
-            try {
-                await window.fb.setDoc(userRef, { avatar: base64Avatar }, { merge: true });
-                alert("Аватарка успешно обновлена! Облако нам не нужно 😎");
-            } catch (err) {
-                console.error(err); alert("Ошибка сохранения!");
-            }
-        };
-        img.src = event.target.result;
-    };
-    reader.readAsDataURL(file);
-});
+/* Логика кнопок аккаунта перенесена вниз в модуль */
 
 // --- ЛОГИКА МАСШТАБА ПИАНИНО ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -3043,6 +2991,59 @@ document.addEventListener('DOMContentLoaded', () => {
           const userRef = window.fb.doc(window.db, "users", window.auth.currentUser.uid);
           await window.fb.setDoc(userRef, { bio: e.target.value }, { merge: true });
       }
+  });
+
+  // --- КНОПКИ АККАУНТА (ТЕПЕРЬ В МОДУЛЕ) ---
+  document.getElementById('btn-login').addEventListener('click', async () => {
+      try {
+          await window.fb.signInWithPopup(window.auth, window.fb.provider);
+      } catch (error) {
+          console.error("Ошибка входа:", error);
+          if (error.code === 'auth/popup-closed-by-user') {
+              alert("Ты закрыл окно выбора аккаунта Google! Попробуй еще раз и выбери аккаунт.");
+          } else {
+              alert("Не удалось войти! Посмотри консоль.");
+          }
+      }
+  });
+
+  document.getElementById('btn-logout').addEventListener('click', async () => {
+      await window.auth.signOut();
+      location.reload();
+  });
+
+  document.getElementById('btn-change-photo').addEventListener('click', () => {
+      document.getElementById('avatar-input').click();
+  });
+
+  document.getElementById('avatar-input').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file || !window.auth.currentUser) return;
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+          const img = new Image();
+          img.onload = async function() {
+              const canvas = document.createElement('canvas');
+              const maxSize = 150;
+              canvas.width = maxSize; canvas.height = maxSize;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, maxSize, maxSize);
+              
+              const base64Avatar = canvas.toDataURL('image/jpeg', 0.8);
+              document.querySelector('.acc-avatar').innerHTML = `<img src="${base64Avatar}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+              
+              const userRef = window.fb.doc(window.db, "users", window.auth.currentUser.uid);
+              try {
+                  await window.fb.setDoc(userRef, { avatar: base64Avatar }, { merge: true });
+                  alert("Аватарка успешно обновлена! 😎");
+              } catch (err) {
+                  console.error(err); alert("Ошибка сохранения!");
+              }
+          };
+          img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
   });
 </script> 
 </body>
