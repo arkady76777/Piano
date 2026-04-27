@@ -713,8 +713,8 @@
 
     <div id="cow-screen" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 10005; justify-content: center; align-items: center; flex-direction: column;">
         <h2 id="cow-timer" style="color: white; font-family: monospace; font-size: 24px; margin-bottom: 20px;">30 seconds remain</h2>
-        <img src="./Cow/cow.gif" style="max-width: 80%; max-height: 70vh; border-radius: 20px;">
-        </div>
+        <img src="./Secrets/cow.gif" style="max-width: 80%; max-height: 70vh; border-radius: 20px;">
+    </div>
 
     <div id="main-section"><div id="studio-container"> <div id="sustain-indicator" data-lang="sustain_on">❇ SUSTAIN PEDAL ON ❇</div>
             
@@ -1807,13 +1807,13 @@ const chatMessages = document.getElementById('chat-messages');
         } else if (val === 'sans') { 
             playMegalovaniaIntro(); 
         } else if (val === 'holy cow') {
-            // ПАСХАЛКА: ПОЛЬСКАЯ КОРОВА (Локальные файлы из папки Cow)
+            // ПАСХАЛКА: ПОЛЬСКАЯ КОРОВА (Локальные файлы из папки Secrets)
             const cowScreen = document.getElementById('cow-screen');
             const cowTimer = document.getElementById('cow-timer');
             cowScreen.style.display = 'flex';
             
-            // Указываем путь к аудиофайлу в папке Cow
-            let cowAudio = new Audio('./Cow/cow.mp3');
+            // Указываем путь к аудиофайлу в папке Secrets
+            let cowAudio = new Audio('./Secrets/cow.mp3');
             cowAudio.volume = 0.8;
             cowAudio.play();
             
