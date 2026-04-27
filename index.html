@@ -521,6 +521,33 @@
     flex-direction: column;
 }
 
+        /* --- ПАСХАЛКИ И ЭФФЕКТЫ --- */
+        .glitch-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.9); z-index: 9999; display: none;
+            flex-direction: column; justify-content: center; align-items: center;
+            color: #ff0055; font-family: monospace; font-size: 35px; text-align: center;
+            animation: noise 0.1s infinite;
+            text-shadow: 0 0 20px #ff0055, 3px 3px 0px #00e5ff;
+        }
+        @keyframes noise {
+            0% { transform: translate(2px, 2px); }
+            25% { transform: translate(-3px, -1px); }
+            50% { transform: translate(1px, -3px); }
+            75% { transform: translate(-2px, 3px); }
+            100% { transform: translate(0, 0); }
+        }
+        
+        .cinematic-active {
+            filter: grayscale(100%);
+            transition: filter 1.5s ease-in-out;
+        }
+        
+        .cinematic-hidden #controls, .cinematic-hidden #sidebar, .cinematic-hidden #main-section {
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -657,6 +684,12 @@
         <div id="side-help" class="sidebar-btn" data-lang-title="side_help" style="margin-top: auto;"><svg class="svg-icon" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg></div>
         <div id="side-set" class="sidebar-btn" data-lang-title="side_set"><svg class="svg-icon" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></div>
         <div id="side-acc" class="sidebar-btn" data-lang-title="side_acc" style="border-radius: 50%; margin-bottom: 20px;"><svg class="svg-icon" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+        
+        <div id="side-cinematic" style="width: 100%; height: 40px; cursor: pointer; position: absolute; bottom: 0; left: 0; opacity: 0; z-index: 10;"></div>
+    </div>
+
+    <div id="glitch-screen" class="glitch-overlay">
+        <div id="glitch-text"></div>
     </div>
 
     <div id="main-section"> <div id="studio-container"> <div id="sustain-indicator" data-lang="sustain_on">❇ SUSTAIN PEDAL ON ❇</div>
@@ -1750,7 +1783,26 @@ const chatMessages = document.getElementById('chat-messages');
             setTimeout(() => e.target.style.color = "#fff", 500); 
         } else if (val === 'sans') { 
             playMegalovaniaIntro(); 
-        } 
+        } else if (val === 'gaster' || val === 'admin' || val === 'owner') {
+            // ПАСХАЛКА: ГЛЮК
+            const glitchScreen = document.getElementById('glitch-screen');
+            const glitchText = document.getElementById('glitch-text');
+            glitchScreen.style.display = 'flex';
+            
+            if (val === 'gaster') {
+                glitchText.innerHTML = "☠︎☜︎✞︎☜︎☼︎ 💣︎✋︎☠︎👎︎<br><br>П Е Р Е З А Г Р У З К А . . .";
+                glitchText.style.fontFamily = 'Wingdings, sans-serif'; 
+            } else {
+                glitchText.innerHTML = "01000101 01010010 01010010 01001111 01010010<br><br>О Ш И Б К А  С И С Т Е М Ы";
+            }
+            
+            // Сбрасываем имя заранее, чтобы после перезагрузки оно не сохранилось
+            e.target.value = "Guest"; 
+            
+            setTimeout(() => {
+                location.reload(); // Жесткая перезагрузка через 3 секунды
+            }, 3000); 
+        }
     });
     
     accNickname.addEventListener('blur', (e) => { 
@@ -1795,7 +1847,28 @@ const chatMessages = document.getElementById('chat-messages');
         }
     });
 
-    document.getElementById('side-help').addEventListener('click', () => { 
+    // --- КИНЕМАТОГРАФИЧНЫЙ РЕЖИМ ---
+    let isCinematic = false;
+    document.getElementById('side-cinematic').addEventListener('click', () => {
+        const body = document.body;
+        if (!isCinematic) {
+            // Включаем: всё плавно становится серым
+            isCinematic = true;
+            body.classList.add('cinematic-active');
+        } else {
+            // Выключаем: плавно скрываем весь интерфейс (остаются только звезды)
+            body.classList.add('cinematic-hidden');
+            
+            // Ждем 3 секунды паузы и внезапно возвращаем цвета и интерфейс
+            setTimeout(() => {
+                body.classList.remove('cinematic-active');
+                body.classList.remove('cinematic-hidden');
+                isCinematic = false;
+            }, 3000);
+        }
+    });
+
+    document.getElementById('side-help').addEventListener('click', () => {
         if (document.getElementById('help-modal').classList.contains('show')) closeModal('help-modal'); 
         else openModal('help-modal'); 
     }); 
