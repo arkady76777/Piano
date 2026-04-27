@@ -548,6 +548,25 @@
             transition: opacity 0.5s ease-in-out;
             pointer-events: none;
         }
+
+        /* --- ГАСТЕР ГЛИТЧ --- */
+        .gaster-symbol {
+            position: fixed; color: white; font-family: 'Wingdings', sans-serif;
+            z-index: 10000; pointer-events: none;
+            animation: fallUp 2s linear infinite; text-shadow: 0 0 15px white;
+        }
+        @keyframes fallUp {
+            0% { transform: translateY(110vh); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-10vh); opacity: 0; }
+        }
+        .error-box {
+            position: fixed; background: #000; border: 2px solid #ff0055;
+            color: #ff0055; padding: 15px; font-family: monospace; font-weight: bold;
+            z-index: 10001; box-shadow: 5px 5px 0px rgba(255,0,85,0.5); pointer-events: none;
+            animation: noise 0.1s infinite;
+        }
     </style>
 </head>
 <body>
@@ -1783,24 +1802,52 @@ const chatMessages = document.getElementById('chat-messages');
             setTimeout(() => e.target.style.color = "#fff", 500); 
         } else if (val === 'sans') { 
             playMegalovaniaIntro(); 
-        } else if (val === 'gaster' || val === 'admin' || val === 'owner') {
+        } else if (val === 'gaster' || val === 'admin' || (val === 'owner' && !window.isOwner)) {
+            // Если ты Владелец, то логика выше проигнорирует 'owner' и даст тебе это имя!
+            
             // ПАСХАЛКА: ГЛЮК
             const glitchScreen = document.getElementById('glitch-screen');
             const glitchText = document.getElementById('glitch-text');
             glitchScreen.style.display = 'flex';
             
             if (val === 'gaster') {
-                glitchText.innerHTML = "☠︎☜︎✞︎☜︎☼︎ 💣︎✋︎☠︎👎︎<br><br>R E L O A D I N G . . .";
-                glitchText.style.fontFamily = 'Wingdings, sans-serif'; 
+                // Разделяем шрифты: символы Гастера отдельно, RELOADING отдельно
+                glitchText.innerHTML = "<span style='font-family: Wingdings, sans-serif;'>☠︎☜︎✞︎☜︎☼︎ 💣︎✋︎☠︎👎︎</span><br><br><span style='font-family: monospace; font-size: 40px;'>R E L O A D I N G . . .</span>";
+                
+                // --- НАЧИНАЕТСЯ ЖЕСТКИЙ ХАОС ---
+                let chaosInterval = setInterval(() => {
+                    // Спавним летящие снизу вверх символы
+                    let sym = document.createElement('div');
+                    sym.className = 'gaster-symbol';
+                    sym.innerText = String.fromCharCode(Math.floor(Math.random() * 94) + 33); // Случайный знак
+                    sym.style.left = Math.random() * 100 + 'vw';
+                    sym.style.fontSize = (Math.random() * 40 + 20) + 'px';
+                    document.body.appendChild(sym);
+
+                    // Спавним окна с ошибками
+                    if (Math.random() > 0.6) {
+                        let err = document.createElement('div');
+                        err.className = 'error-box';
+                        err.innerText = "FATAL_ERROR\n0x00000GSTR";
+                        err.style.left = Math.random() * 80 + 'vw';
+                        err.style.top = Math.random() * 80 + 'vh';
+                        document.body.appendChild(err);
+                    }
+                }, 50); // Хаос генерируется каждые 50 миллисекунд
+
+                // Выключаем генератор хаоса прямо перед перезагрузкой
+                setTimeout(() => clearInterval(chaosInterval), 2900);
+
             } else {
-                glitchText.innerHTML = "01000101 01010010 01010010 01001111 01010010<br><br> S Y S T E M  E R R O R";
+                glitchText.style.fontFamily = 'monospace';
+                glitchText.innerHTML = "01000101 01010010 01010010 01001111 01010010<br><br>S Y S T E M  E R R O R";
             }
             
             // Сбрасываем имя заранее, чтобы после перезагрузки оно не сохранилось
             e.target.value = "Guest"; 
             
             setTimeout(() => {
-                location.reload(); // Жесткая перезагрузка через 3 секунды
+                location.reload(); 
             }, 3000); 
         }
     });
