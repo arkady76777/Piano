@@ -2942,10 +2942,14 @@ const chatMessages = document.getElementById('chat-messages');
         c2d.globalAlpha = 1; c2d.shadowBlur = 0; 
         requestAnimationFrame(renderVis);
     }
-    
     renderVis();
-    setLang('ru'); // Сразу ставим русский язык
-    switchView('home'); // ВОТ ТЕПЕРЬ ЗАПУСКАЕМ СТУДИЮ, когда всё готово!
+    setLang('ru'); 
+    switchView('home'); 
+    
+    // Имитируем клик по кнопке чата, чтобы он открылся сразу
+    setTimeout(() => {
+        document.getElementById('side-chat').click();
+    }, 100); 
 });
 
 /* Логика кнопок аккаунта перенесена вниз в модуль */
