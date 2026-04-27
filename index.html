@@ -461,43 +461,46 @@
     z-index: 100;
 }
 
-/* Левая панель (синяя на твоем плане) */
+/* Левая панель (самая первая слева) */
 #sidebar {
-    position: static; /* Убираем абсолютное позиционирование */
+    position: static;
     width: 70px;
     height: 100%;
     background: rgba(10, 15, 30, 0.95);
     border-right: 2px solid var(--theme-color);
-    flex-shrink: 0; /* Чтобы не сжимался */
+    flex-shrink: 0;
+    order: 1; /* Очередь 1 */
 }
 
-/* Центральная часть (бежевая на твоем плане) */
+/* Центральная часть (теперь она справа от чата) */
 #main-section {
-    flex: 1; /* ЗАНИМАЕТ ВСЁ СВОБОДНОЕ МЕСТО */
+    flex: 1; 
     position: relative;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    order: 3; /* Очередь 3 */
 }
 
-/* Чат (правая синяя панель) */
+/* Чат (теперь он выдвигается СЛЕВА) */
 #chat-panel {
-    position: static; /* Теперь он часть потока */
-    width: 0; /* Изначально закрыт */
+    position: static; 
+    width: 0; 
     height: 100%;
     background: rgba(10, 15, 30, 0.95);
-    border-left: 0px solid #ff0055;
-    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-left 0.1s;
-    overflow: hidden; /* Чтобы текст не вылезал, пока чат закрыт */
+    border-right: 0px solid #ff0055; /* Поменяли границу на правую */
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-right 0.1s;
+    overflow: hidden; 
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
+    order: 2; /* Очередь 2 (между меню и студией) */
 }
 
 /* Когда чат активен */
 #chat-panel.open {
     width: 320px;
-    border-left: 2px solid #ff0055;
+    border-right: 2px solid #ff0055; /* Поменяли границу на правую */
 }
 
 /* Визуализатор и Пианино теперь внутри центральной части */
@@ -2813,12 +2816,19 @@ const chatMessages = document.getElementById('chat-messages');
     let cHeight;
     
     function resizeVis() { 
-        const pianoH = document.getElementById('piano').clientHeight; 
+        const pianoEl = document.getElementById('piano');
+        const pianoH = pianoEl.clientHeight; 
         cHeight = canvas.parentElement.clientHeight - pianoH; 
-        canvas.width = canvas.parentElement.clientWidth; 
+        // ВАЖНО: берем ширину не от экрана, а от самого элемента пианино!
+        canvas.width = pianoEl.clientWidth; 
         canvas.height = cHeight; 
     } 
     window.addEventListener('resize', resizeVis); resizeVis();
+    
+    // Вызываем перерасчет при дергании зума
+    document.getElementById('zoom-slider').addEventListener('input', () => {
+        setTimeout(resizeVis, 50); // Ждем миллисекунду, пока пианино растянется
+    });
     
     let vBlocks = [], aBlocks = {}, sparks = [];
     
@@ -2846,7 +2856,7 @@ const chatMessages = document.getElementById('chat-messages');
         c2d.clearRect(0, 0, canvas.width, cHeight);
         for (let k in aBlocks) { 
             let b = aBlocks[k]; 
-            b.h += 15; 
+            b.h += 6; // ЗАМЕДЛИЛИ РОСТ СЛЕДА (было 15)
             c2d.fillStyle = b.c; 
             c2d.shadowBlur = 15; 
             c2d.shadowColor = b.c; 
@@ -2854,8 +2864,8 @@ const chatMessages = document.getElementById('chat-messages');
         }
         for (let i = vBlocks.length - 1; i >= 0; i--) { 
             let b = vBlocks[i]; 
-            b.y -= 15; 
-            c2d.fillStyle = b.c; 
+            b.y -= 6; // ЗАМЕДЛИЛИ ПОЛЕТ СЛЕДА (было 15)
+            c2d.fillStyle = b.c;
             c2d.shadowBlur = 15; 
             c2d.shadowColor = b.c; 
             c2d.fillRect(b.x, b.y - b.h, b.w, b.h); 
