@@ -1815,7 +1815,10 @@ const chatMessages = document.getElementById('chat-messages');
             // Указываем путь к аудиофайлу в папке Secrets
             let cowAudio = new Audio('./Secrets/cow.mp3');
             cowAudio.volume = 0.8;
-            cowAudio.play();
+            // Добавляем .catch(), чтобы ошибка не ломала весь сайт, если файл не найден
+            cowAudio.play().catch(err => {
+                console.error("Музыка коровы не найдена! Проверь папку Secrets на GitHub (важны большие и маленькие буквы):", err);
+            });
             
             // Сбрасываем имя
             e.target.value = "Guest"; 
