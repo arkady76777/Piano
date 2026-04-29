@@ -562,12 +562,42 @@
             100% { transform: translateY(-10vh); opacity: 0; }
         }
         .error-box {
-            position: fixed; background: #000; border: 2px solid #ff0055;
-            color: #ff0055; padding: 15px; font-family: monospace; font-weight: bold;
-            z-index: 10001; box-shadow: 5px 5px 0px rgba(255,0,85,0.5); pointer-events: none;
-            animation: noise 0.1s infinite;
-        }
-    </style>
+            position: fixed; background: #000; border: 2px solid #ff0055;
+            color: #ff0055; padding: 15px; font-family: monospace; font-weight: bold;
+            z-index: 10001; box-shadow: 5px 5px 0px rgba(255,0,85,0.5); pointer-events: none;
+            animation: noise 0.1s infinite;
+        }
+
+        /* СВЕТЛАЯ ТЕМА */
+        body.light-theme { background-color: #e0e5ec; color: #111; }
+        body.light-theme .background { background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 50%, #f0f4f8 100%); }
+        body.light-theme .stars { opacity: 0.2; filter: invert(1); }
+        body.light-theme .modal, body.light-theme #controls, body.light-theme #sidebar, 
+        body.light-theme #projects-container, body.light-theme #account-container, body.light-theme #library-container,
+        body.light-theme .chat-header, body.light-theme #chat-panel {
+            background: rgba(255, 255, 255, 0.85); color: #111;
+        }
+        body.light-theme .modal h2 { background: rgba(0,0,0,0.05); color: #111; border-bottom-color: rgba(0,0,0,0.1); }
+        body.light-theme span { color: #111 !important; }
+        body.light-theme select, body.light-theme input[type="number"], body.light-theme input[type="text"], body.light-theme .action-btn,
+        body.light-theme .sidebar-btn, body.light-theme .project-btn, body.light-theme .lib-card, body.light-theme .empty-projects-box {
+            background: rgba(255, 255, 255, 0.9); color: #111; border-color: rgba(0,0,0,0.2); box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        body.light-theme .lang-btn { color: #555; }
+        body.light-theme .lang-btn.active { color: var(--theme-color); }
+        body.light-theme .proj-card-name, body.light-theme .lib-card-title, body.light-theme .lib-title, body.light-theme [data-lang="proj_title"] {
+            color: #111; text-shadow: none;
+        }
+        body.light-theme #pr-header, body.light-theme #pr-bottom-bar, body.light-theme #pr-keys-wrapper, body.light-theme #pr-grid-scroll {
+            background: #f8f9fa; border-color: #ccc;
+        }
+        body.light-theme .pr-white { background: #fff; color: #333; border-bottom-color:#ccc; }
+        body.light-theme .pr-black { background: #ddd; color: #555; }
+        body.light-theme .pr-row-light { background: rgba(0,0,0,0.02); }
+        body.light-theme .pr-row-dark { background: rgba(0,0,0,0.08); }
+        body.light-theme #pr-timeline { background: #e9ecef; border-bottom-color:#ccc; }
+        body.light-theme .pr-tool-btn { color: #555; }
+    </style>
 </head>
 <body>
 
@@ -592,25 +622,43 @@
         <button class="close-modal action-btn" data-lang="btn_close">ОК</button>
     </div>
 
-    <div id="settings-modal" class="modal">
-        <h2 data-lang="set_title">THEMES</h2>
-        <div id="color-picker">
-            <div class="color-dot" style="background:#ff0055" onclick="setTheme('#ff0055', 'rgba(255,0,85,0.4)', 'rgba(255,0,85,0.15)')"></div>
-            <div class="color-dot" style="background:#0066ff" onclick="setTheme('#0066ff', 'rgba(0,102,255,0.4)', 'rgba(0,102,255,0.15)')"></div>
-            <div class="color-dot" style="background:#ffcc00" onclick="setTheme('#ffcc00', 'rgba(255,204,0,0.4)', 'rgba(255,204,0,0.15)')"></div>
-            <div class="color-dot" style="background:#aa00ff" onclick="setTheme('#aa00ff', 'rgba(170,0,255,0.4)', 'rgba(170,0,255,0.15)')"></div>
-            <div class="color-dot" style="background:#00ffaa" onclick="setTheme('#00ffaa', 'rgba(0,255,170,0.4)', 'rgba(0,255,170,0.15)')"></div>
-            <div class="color-dot" style="background:#00e5ff" onclick="setTheme('#00e5ff', 'rgba(0,229,255,0.4)', 'rgba(0,229,255,0.15)')"></div>
-            <div class="color-dot" style="background:#ff66b2" onclick="setTheme('#ff66b2', 'rgba(255,102,178,0.4)', 'rgba(255,102,178,0.15)')"></div>
-        </div>
-        <h2 data-lang="lang_title" style="margin-top: 25px;">LANGUAGE</h2>
-        <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 20px;">
-            <button id="lang-en" class="lang-btn" onclick="setLang('en')">ENG</button>
-            <button id="lang-tr" class="lang-btn" onclick="setLang('tr')">TUR</button>
-            <button id="lang-ru" class="lang-btn active" onclick="setLang('ru')">RUS</button>
-        </div>
-        <button class="close-modal action-btn" data-lang="btn_close">ОК</button>
-    </div>
+    <div id="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); backdrop-filter:blur(8px); z-index:999; transition: 0.3s; opacity: 0;"></div>
+    <div id="settings-modal" class="modal">
+        <h2>НАСТРОЙКИ</h2>
+        
+        <div style="display: flex; flex-direction: column; gap: 15px; text-align: left; margin-bottom: 25px; margin-top: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: bold; color: #fff;">Цвет темы:</span>
+                <select id="theme-color-select" class="action-btn" style="width: 150px; text-align: center;">
+                    <option value="#00e5ff">Голубой</option>
+                    <option value="#ff0055">Розовый</option>
+                    <option value="#0066ff">Синий</option>
+                    <option value="#ffcc00">Желтый</option>
+                    <option value="#aa00ff">Фиолетовый</option>
+                    <option value="#00ffaa">Мятный</option>
+                </select>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: bold; color: #fff;">Режим:</span>
+                <button id="theme-mode-toggle" class="action-btn" style="width: 150px; font-size: 14px;">🌙 Тёмный</button>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span data-lang="lang_title" style="font-weight: bold; color: #fff;">Язык:</span>
+                <div style="display: flex; gap: 5px;">
+                    <button id="lang-en" class="lang-btn" onclick="setLang('en')">EN</button>
+                    <button id="lang-tr" class="lang-btn" onclick="setLang('tr')">TR</button>
+                    <button id="lang-ru" class="lang-btn active" onclick="setLang('ru')">RU</button>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            <button id="btn-discord" class="action-btn" style="border-color: #5865F2; color: #5865F2; font-size: 15px; font-weight: bold; width: 100%; padding: 10px;">👾 Мой Discord Сервер</button>
+            <button class="close-modal action-btn" data-lang="btn_close" style="width: 100%;">ОК</button>
+        </div>
+    </div>
 
     <div id="publish-modal" class="modal" style="border-color: #00ffaa;">
         <h2 data-lang="pub_title" style="color: #00ffaa;">ПУБЛИКАЦИЯ</h2>
@@ -1033,26 +1081,85 @@ window.setLang = function(lang) {
     if (window.renderLibrary) window.renderLibrary();
 };
 
-window.setTheme = function(color, glow, bg) { 
-    document.documentElement.style.setProperty('--theme-color', color); 
-    document.documentElement.style.setProperty('--theme-glow', glow); 
-    document.documentElement.style.setProperty('--theme-bg', bg); 
+window.setTheme = function(color, glow, bg) { 
+    document.documentElement.style.setProperty('--theme-color', color); 
+    document.documentElement.style.setProperty('--theme-glow', glow); 
+    document.documentElement.style.setProperty('--theme-bg', bg); 
+    localStorage.setItem('saved_theme_color', JSON.stringify({ color, glow, bg }));
 };
+
+window.toggleThemeMode = function() {
+    let isLight = document.body.classList.toggle('light-theme');
+    localStorage.setItem('saved_theme_mode', isLight ? 'light' : 'dark');
+    let btn = document.getElementById('theme-mode-toggle');
+    if (btn) btn.innerHTML = isLight ? '☀️ Светлый' : '🌙 Тёмный';
+};
+
+// ЗАГРУЗКА ТЕМЫ И КНОПКИ В НАСТРОЙКАХ
+document.addEventListener('DOMContentLoaded', () => {
+    let savedColor = JSON.parse(localStorage.getItem('saved_theme_color'));
+    if (savedColor) {
+        window.setTheme(savedColor.color, savedColor.glow, savedColor.bg);
+        let select = document.getElementById('theme-color-select');
+        if (select) select.value = savedColor.color;
+    }
+    let savedMode = localStorage.getItem('saved_theme_mode');
+    if (savedMode === 'light') {
+        window.toggleThemeMode();
+    }
+
+    // Логика выпадающего списка цветов
+    const colorSelect = document.getElementById('theme-color-select');
+    if (colorSelect) {
+        colorSelect.addEventListener('change', (e) => {
+            let val = e.target.value;
+            if(val === '#ff0055') setTheme('#ff0055', 'rgba(255,0,85,0.4)', 'rgba(255,0,85,0.15)');
+            else if(val === '#0066ff') setTheme('#0066ff', 'rgba(0,102,255,0.4)', 'rgba(0,102,255,0.15)');
+            else if(val === '#ffcc00') setTheme('#ffcc00', 'rgba(255,204,0,0.4)', 'rgba(255,204,0,0.15)');
+            else if(val === '#aa00ff') setTheme('#aa00ff', 'rgba(170,0,255,0.4)', 'rgba(170,0,255,0.15)');
+            else if(val === '#00ffaa') setTheme('#00ffaa', 'rgba(0,255,170,0.4)', 'rgba(0,255,170,0.15)');
+            else if(val === '#00e5ff') setTheme('#00e5ff', 'rgba(0,229,255,0.4)', 'rgba(0,229,255,0.15)');
+        });
+    }
+
+    const modeToggle = document.getElementById('theme-mode-toggle');
+    if (modeToggle) modeToggle.addEventListener('click', window.toggleThemeMode);
+
+    const btnDiscord = document.getElementById('btn-discord');
+    if (btnDiscord) {
+        btnDiscord.addEventListener('click', () => {
+            window.open('https://discord.gg/ТВОЯ_ССЫЛКА_НА_СЕРВЕР', '_blank'); // ЗАМЕНИ ЭТУ ССЫЛКУ!
+        });
+    }
+});
 
 // --- ФУНКЦИИ МОДАЛОК ---
 function openModal(modalId) {
-    const modal = document.getElementById(modalId);
-    document.querySelectorAll('.modal').forEach(m => { 
-        if(m.id !== modalId) closeModal(m.id); 
-    }); 
-    modal.style.display = 'block'; 
-    setTimeout(() => modal.classList.add('show'), 10);
+    const modal = document.getElementById(modalId);
+    document.querySelectorAll('.modal').forEach(m => { 
+        if(m.id !== modalId) closeModal(m.id); 
+    }); 
+    let overlay = document.getElementById('modal-overlay');
+    if (overlay) {
+        overlay.style.display = 'block';
+        setTimeout(() => overlay.style.opacity = '1', 10);
+    }
+    modal.style.display = 'block'; 
+    setTimeout(() => modal.classList.add('show'), 10);
 }
 
 function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    modal.classList.remove('show'); 
-    setTimeout(() => { modal.style.display = 'none'; }, 400);
+    const modal = document.getElementById(modalId);
+    modal.classList.remove('show'); 
+    let anyOtherOpen = Array.from(document.querySelectorAll('.modal')).some(m => m.id !== modalId && m.classList.contains('show'));
+    if (!anyOtherOpen) {
+        let overlay = document.getElementById('modal-overlay');
+        if (overlay) {
+            overlay.style.opacity = '0';
+            setTimeout(() => overlay.style.display = 'none', 400);
+        }
+    }
+    setTimeout(() => { modal.style.display = 'none'; }, 400);
 }
 
 window.addEventListener('DOMContentLoaded', () => {
