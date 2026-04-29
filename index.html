@@ -92,12 +92,12 @@
            2. UI CONTROLS & MODALS
            ========================================================================== */
         #controls { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 85px; 
-            background: rgba(10, 15, 30, 0.85); backdrop-filter: blur(12px); 
-            border-bottom: 2px solid var(--theme-color); display: flex; 
-            justify-content: space-between; align-items: center; padding: 0 30px; 
-            z-index: 200; transition: border-color 0.3s; 
-        }
+    position: absolute; top: 0; left: 0; width: 100%; height: 85px; 
+    background: rgba(10, 15, 30, 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); 
+    border-bottom: 2px solid var(--theme-color); display: flex; 
+    justify-content: space-between; align-items: center; padding: 0 30px; 
+    z-index: 200; transition: border-color 0.3s; 
+}
 
         .ctrl-group { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
         .logo { 
@@ -649,8 +649,12 @@
             <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
                 <span style="font-weight: bold; font-size: 16px; color: #fff;">Тема:</span>
                 <div style="display: flex; gap: 8px;">
-                    <button id="theme-light-btn" class="action-btn" style="width: 45px; height: 40px; font-size: 20px; display: flex; align-items: center; justify-content: center; border-radius: 8px; padding: 0;">☀️</button>
-                    <button id="theme-dark-btn" class="action-btn" style="width: 45px; height: 40px; font-size: 20px; display: flex; align-items: center; justify-content: center; border-radius: 8px; padding: 0;">🌙</button>
+                    <button id="theme-light-btn" class="action-btn" style="width: 45px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 8px; padding: 0;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="svg-icon"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                    </button>
+                    <button id="theme-dark-btn" class="action-btn" style="width: 45px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 8px; padding: 0;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="svg-icon"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                    </button>
                 </div>
             </div>
 
@@ -1164,32 +1168,41 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // --- ФУНКЦИИ МОДАЛОК ---
+let overlayTimeout; // Добавили переменную для таймера фона
+
 function openModal(modalId) {
-    const modal = document.getElementById(modalId);
-    document.querySelectorAll('.modal').forEach(m => { 
-        if(m.id !== modalId) closeModal(m.id); 
-    }); 
-    let overlay = document.getElementById('modal-overlay');
-    if (overlay) {
-        overlay.style.display = 'block';
-        setTimeout(() => overlay.style.opacity = '1', 10);
-    }
-    modal.style.display = 'block'; 
-    setTimeout(() => modal.classList.add('show'), 10);
+    const modal = document.getElementById(modalId);
+    
+    // Закрываем только те модалки, которые РЕАЛЬНО открыты
+    document.querySelectorAll('.modal').forEach(m => { 
+        if(m.id !== modalId && m.style.display === 'block') closeModal(m.id); 
+    }); 
+    
+    let overlay = document.getElementById('modal-overlay');
+    if (overlay) {
+        clearTimeout(overlayTimeout); // Спасаем фон от случайного скрытия
+        overlay.style.display = 'block';
+        setTimeout(() => overlay.style.opacity = '1', 10);
+    }
+    modal.style.display = 'block'; 
+    setTimeout(() => modal.classList.add('show'), 10);
 }
 
 function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    modal.classList.remove('show'); 
-    let anyOtherOpen = Array.from(document.querySelectorAll('.modal')).some(m => m.id !== modalId && m.classList.contains('show'));
-    if (!anyOtherOpen) {
-        let overlay = document.getElementById('modal-overlay');
-        if (overlay) {
-            overlay.style.opacity = '0';
-            setTimeout(() => overlay.style.display = 'none', 400);
-        }
-    }
-    setTimeout(() => { modal.style.display = 'none'; }, 400);
+    const modal = document.getElementById(modalId);
+    modal.classList.remove('show'); 
+    
+    // Проверяем открытые окна надежнее (по display, а не по классу show)
+    let anyOtherOpen = Array.from(document.querySelectorAll('.modal')).some(m => m.id !== modalId && m.style.display === 'block');
+    
+    if (!anyOtherOpen) {
+        let overlay = document.getElementById('modal-overlay');
+        if (overlay) {
+            overlay.style.opacity = '0';
+            overlayTimeout = setTimeout(() => overlay.style.display = 'none', 400);
+        }
+    }
+    setTimeout(() => { modal.style.display = 'none'; }, 400);
 }
 
 window.addEventListener('DOMContentLoaded', () => {
