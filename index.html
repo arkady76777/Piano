@@ -662,7 +662,7 @@
             body.light-theme .pv-sidebar { border-bottom-color: #ddd; }
         }
     </style>
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+<script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
 </head>
 <body>
 
@@ -3577,6 +3577,36 @@ document.addEventListener('DOMContentLoaded', () => {
       };
       reader.readAsDataURL(file);
   });
+    // Подключаемся к твоему серверу на Render
+    const socket = io('https://pianotale-server.onrender.com');
+
+    // Проверяем пинг каждые 2 секунды
+    setInterval(() => {
+        const start = Date.now();
+        
+        // Отправляем сигнал
+        socket.emit('ping', () => {
+            const latency = Date.now() - start; 
+            
+            const pingText = document.getElementById('ping-text');
+            if (!pingText) return; // Защита от ошибок
+            
+            const pingDot = pingText.previousElementSibling; 
+            const pingContainer = pingText.parentElement;
+            
+            // Обновляем текст
+            pingText.innerText = latency + ' ms';
+            
+            // Меняем цвет от задержки
+            let color = '#2ecc71'; // Зеленый
+            if (latency > 100) color = '#ffcc00'; // Желтый
+            if (latency > 250) color = '#ff0055'; // Красный
+            
+            pingContainer.style.color = color;
+            pingDot.style.background = color;
+            pingDot.style.boxShadow = `0 0 5px ${color}`;
+        });
+    }, 2000);
 </script> 
 </body>
 </html>
